@@ -94,7 +94,7 @@ version-selection: function [] [
 	
 		; update output of associated code
 		attempt [
-			run-remix commands/text 
+			refresh-panels 
 		]
 	]
 ]
@@ -108,7 +108,7 @@ latest-version: function [] [
 		version-select/selected: (length? memory-list)
 		; update output of associated code
 		attempt [
-			run-remix commands/text 
+			refresh-panels 
 		]
 	]
 ]
@@ -131,7 +131,7 @@ version-change: function [change] [
 			]
 			commands/text: copy (memory-list/(to-integer (version-select/selected) ))
 			attempt [
-				run-remix commands/text 
+				refresh-panels 
 			]
 		]
 	]
