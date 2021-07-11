@@ -172,7 +172,7 @@ run-remix/running-first-time stdlib
 
 ; Setting up the graphics area by overriding the associated func
 setup-paper: func [
-    { Prepare the paper and drawing instructions.
+    { Overridden version - Prepare the paper and drawing instructions.
       At the moment I am using a 2x resolution background for the paper. }
     colour [tuple!]
     width [integer!]
@@ -193,7 +193,7 @@ setup-paper: func [
 ; Allowing functions to be redefined temporarily so that re-execution of code
 ; does not create trouble
 insert-function: function [
-    { Insert a function into the function map table }
+    { Overridden version - Insert a function into the function map table }
     func-object [object!]   {the function object}
 ][
     name: to-function-name func-object/template
@@ -202,6 +202,54 @@ insert-function: function [
 
 ; loading the graphics statements which should be executed everytime
 precursor-statements: read %precusor-graphics-statements.rem
+
+; Block containing the points clicked on in graphics area
+; Each element inside is a representation of a coordinate
+; like: {0, 0}
+points-clicked-on: make block! 0
+
+refresh-panels: func [
+		{ Clears the input text and graphics panels and then executes the remix 
+		code in the input panel }
+][
+		; first execute the necessary graphics related statements
+		run-remix precursor-statements
+		; clean the graphics area
+		draw-command-layers: copy/deep [[]]
+		all-layers/2: draw-command-layers
+		; run the code
+		run-remix commands/text 
+]
+
+visualize-clicked-points: func [
+		{ Visualize the points based on the number of points clicked }
+		x [integer!]   {x-coordinate clicked on}
+		y [integer!]   {y-coordinate clicked on}
+	][
+		append points-clicked-on rejoin ["{" x ", " y "}"]
+		clear commands/text ; clear the input text panel
+		point-clicked-on-radius: 2
+		case [
+			; plot a point
+			(length? points-clicked-on) = 1 [
+				commands/text: rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
+			]
+			; draw a line by joining two points
+			(length? points-clicked-on) = 2 [
+				commands/text: rejoin ["draw line from (" points-clicked-on/1 ") to (" points-clicked-on/2 ")"]
+			]
+			; draw a polygon
+			(length? points-clicked-on) > 2 [
+				; format the points as remix code
+				points-of-shape: replace/all (rejoin points-clicked-on) "}" "},^/"
+				; remove the last comma in the `points-of-shape` string (the newline
+				; following the comma is unaffected)
+				remove at points-of-shape ((length? points-of-shape) - 1)
+				commands/text: rejoin ["shape1 : make shape of {^/" points-of-shape "}^/^/" "shape1 [size] : 1^/" "draw (shape1)"]
+			]
+		]
+		refresh-panels
+]
 
 view/tight [
 	title "Live"
@@ -215,21 +263,23 @@ view/tight [
 				]
 			]
 			attempt [
-				; first execute the necessary graphics related statements
-				run-remix precursor-statements
-				; clean the graphics area
-				draw-command-layers: copy/deep [[]]
-				all-layers/2: draw-command-layers
-				; run the code
-				run-remix commands/text 
+				refresh-panels 
 			]
 
 		]
 
 	output-area: area 
 		400x600
-	paper: base 
-		400x600 on-time [do-draw-animate]
+
+	paper: base 400x600 on-time [do-draw-animate]
+	on-down [
+		visualize-clicked-points event/offset/x event/offset/y
+	]
+
+	; setting up the graphics panel so that "on standard paper" will not
+	; necessarily need to be called before the attempt to generate any graphics
+	do [setup-paper 255.255.255 400 600]
+
 	version-area: panel
 		1x600
 		below 
