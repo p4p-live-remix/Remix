@@ -203,7 +203,7 @@ insert-function: function [
 ; loading the graphics statements which should be executed everytime
 precursor-statements: read %precusor-graphics-statements.rem
 
-; Block containing the points clicked on in graphics area
+; Block containing (it 'remembers') the points clicked on in graphics area
 ; Each element inside is a representation of a coordinate
 ; like: {0, 0}
 points-clicked-on: make block! 0
@@ -226,6 +226,34 @@ visualize-clicked-points: func [
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
 	][
+		; Synchronize the points written in code with the 'remembered' clicked points
+		; the list of points will looks like the following:
+		; {
+		; {x1, y1},
+		; {x2, y2},
+		; ... more points (no comma at the end)
+		; }
+		if (not ((length? commands/text) = none)) [
+			text-to-process: copy commands/text
+			; start extracting the code auto-generated when points are clicked on
+			text-to-process: find text-to-process "shape1 : make shape of {"
+			if (not ((length? text-to-process) = none)) [
+				; find the opening bracket of the points list in remix code
+				text-to-process: find text-to-process "{"
+				; remove the first bracket and the following newline character
+				remove/part text-to-process 2
+				reverse text-to-process
+				; locate where the list of points ends
+				text-to-process: find text-to-process "}^/"
+				; remove the closing bracket and the newline
+				remove/part text-to-process 2
+				reverse text-to-process
+				synced-points: split text-to-process ",^/"
+				points-clicked-on: copy synced-points ; update the 'remembered' points
+			]
+		]
+
+		; process the latest clicked points
 		append points-clicked-on rejoin ["{" x ", " y "}"]
 		clear commands/text ; clear the input text panel
 		point-clicked-on-radius: 2
