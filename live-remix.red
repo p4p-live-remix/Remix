@@ -223,7 +223,7 @@ refresh-panels: func [
 			and 
 			((length? find commands/text "draw line from (") = none)
 			and
-			((length? find commands/text "shape1 : make shape of {^/") = none)
+			((length? find commands/text "auto-generated-shape : make shape of {^/") = none)
 		) [
 			clear points-clicked-on
 		]
@@ -246,7 +246,7 @@ visualize-clicked-points: func [
 		if (not ((length? commands/text) = none)) [
 			text-to-process: copy commands/text
 			; start extracting the code auto-generated when points are clicked on
-			text-to-process: find text-to-process "shape1 : make shape of {"
+			text-to-process: find text-to-process "auto-generated-shape : make shape of {"
 			if (not ((length? text-to-process) = none)) [
 				; find the opening bracket of the points list in remix code
 				text-to-process: find text-to-process "{"
@@ -283,7 +283,7 @@ visualize-clicked-points: func [
 				; remove the last comma in the `points-of-shape` string (the newline
 				; following the comma is unaffected)
 				remove at points-of-shape ((length? points-of-shape) - 1)
-				commands/text: rejoin ["shape1 : make shape of {^/" points-of-shape "}^/^/" "shape1 [size] : 1^/" "draw (shape1)"]
+				commands/text: rejoin ["auto-generated-shape : make shape of {^/" points-of-shape "}^/^/" "auto-generated-shape [size] : 1^/" "draw (auto-generated-shape)"]
 			]
 		]
 		refresh-panels
