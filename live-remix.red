@@ -239,54 +239,75 @@ visualize-clicked-points: func [
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
 	][
-		; Synchronize the points written in code with the 'remembered' clicked points
-		; the list of points will looks like the following:
-		; {
-		; {x1, y1},
-		; {x2, y2},
-		; ... more points (no comma at the end)
-		; }
-		if (not ((length? commands/text) = none)) [
-			text-to-process: copy commands/text
-			; start extracting the code auto-generated when points are clicked on
-			text-to-process: find text-to-process "auto-generated-shape : make shape of {"
-			if (not ((length? text-to-process) = none)) [
-				; find the opening bracket of the points list in remix code
-				text-to-process: find text-to-process "{"
-				; remove the first bracket and the following newline character
-				remove/part text-to-process 2
-				reverse text-to-process
-				; locate where the list of points ends
-				text-to-process: find text-to-process "}^/"
-				; remove the closing bracket and the newline
-				remove/part text-to-process 2
-				reverse text-to-process
-				synced-points: split text-to-process ",^/"
-				points-clicked-on: copy synced-points ; update the 'remembered' points
-			]
-		]
-
-		; process the latest clicked points
-		append points-clicked-on rejoin ["{" x ", " y "}"]
-		clear commands/text ; clear the input text panel
 		point-clicked-on-radius: 2
-		case [
-			; plot a point
-			(length? points-clicked-on) = 1 [
-				commands/text: rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
+		clear commands/text ; clear the input text panel
+		either (shape-drawing-method = "closed-shape") [
+			; Synchronize the points written in code with the 'remembered' clicked points
+			; the list of points will looks like the following:
+			; {
+			; {x1, y1},
+			; {x2, y2},
+			; ... more points (no comma at the end)
+			; }
+			if (not ((length? commands/text) = none)) [
+				text-to-process: copy commands/text
+				; start extracting the code auto-generated when points are clicked on
+				text-to-process: find text-to-process "auto-generated-shape : make shape of {"
+				if (not ((length? text-to-process) = none)) [
+					; find the opening bracket of the points list in remix code
+					text-to-process: find text-to-process "{"
+					; remove the first bracket and the following newline character
+					remove/part text-to-process 2
+					reverse text-to-process
+					; locate where the list of points ends
+					text-to-process: find text-to-process "}^/"
+					; remove the closing bracket and the newline
+					remove/part text-to-process 2
+					reverse text-to-process
+					synced-points: split text-to-process ",^/"
+					points-clicked-on: copy synced-points ; update the 'remembered' points
+				]
 			]
-			; draw a line by joining two points
-			(length? points-clicked-on) = 2 [
-				commands/text: rejoin ["draw line from (" points-clicked-on/1 ") to (" points-clicked-on/2 ")"]
+
+			; process the latest clicked points
+			append points-clicked-on rejoin ["{" x ", " y "}"]
+			case [
+				; plot a point
+				(length? points-clicked-on) = 1 [
+					commands/text: rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
+				]
+				; draw a line by joining two points
+				(length? points-clicked-on) = 2 [
+					commands/text: rejoin ["draw line from (" points-clicked-on/1 ") to (" points-clicked-on/2 ")"]
+				]
+				; draw a polygon
+				(length? points-clicked-on) > 2 [
+					; format the points as remix code
+					points-of-shape: replace/all (rejoin points-clicked-on) "}" "},^/"
+					; remove the last comma in the `points-of-shape` string (the newline
+					; following the comma is unaffected)
+					remove at points-of-shape ((length? points-of-shape) - 1)
+					commands/text: rejoin ["auto-generated-shape : make shape of {^/" points-of-shape "}^/^/" "auto-generated-shape [size] : 1^/" "draw (auto-generated-shape)"]
+				]
 			]
-			; draw a polygon
-			(length? points-clicked-on) > 2 [
-				; format the points as remix code
-				points-of-shape: replace/all (rejoin points-clicked-on) "}" "},^/"
-				; remove the last comma in the `points-of-shape` string (the newline
-				; following the comma is unaffected)
-				remove at points-of-shape ((length? points-of-shape) - 1)
-				commands/text: rejoin ["auto-generated-shape : make shape of {^/" points-of-shape "}^/^/" "auto-generated-shape [size] : 1^/" "draw (auto-generated-shape)"]
+		][
+			; when shape-drawing-method = "circle"
+			append points-clicked-on rejoin ["{" x ", " y "}"]
+			case [
+				; define the center
+				(length? points-clicked-on) = 1 [
+					x1: x
+					y1: y
+					commands/text: rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
+				]
+				; draw circle as radius is now provided
+				(length? points-clicked-on) = 2 [
+					x2: x
+					y2: y
+					radius:  to-integer (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** 0.5
+					commands/text: rejoin ["draw circle of (" radius ") at (" points-clicked-on/1 ")"]
+					clear points-clicked-on
+				]
 			]
 		]
 		refresh-panels
