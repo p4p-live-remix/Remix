@@ -166,6 +166,19 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 	
 ]
 
+;;; functions to detect enter keystroke
+enter-key-pressed: function[text][
+	; print commands
+	; print (length? text)
+	; print ((length? text) - 1)
+	; print text/(length? text)
+	if text/(length? text) = newline [
+		return true
+	]
+	return false
+	; print parse text [((length? text) - 1) skip newline]
+]
+
 ; run (load into Red runtime) the standard remix library
 stdlib: read %standard-lib.rem
 run-remix/running-first-time stdlib
@@ -261,6 +274,9 @@ view/tight [
 					save-text commands/text
 					append version-select/data (to-string (length? memory-list))
 				]
+			]
+			if (enter-key-pressed commands/text) [
+				print "WORKS"
 			]
 			attempt [
 				refresh-panels 
