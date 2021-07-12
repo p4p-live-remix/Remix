@@ -94,7 +94,7 @@ version-selection: function [] [
 	
 		; update output of associated code
 		attempt [
-			run-remix commands/text 
+			refresh-panels 
 		]
 	]
 ]
@@ -108,7 +108,7 @@ latest-version: function [] [
 		version-select/selected: (length? memory-list)
 		; update output of associated code
 		attempt [
-			run-remix commands/text 
+			refresh-panels 
 		]
 	]
 ]
@@ -131,7 +131,7 @@ version-change: function [change] [
 			]
 			commands/text: copy (memory-list/(to-integer (version-select/selected) ))
 			attempt [
-				run-remix commands/text 
+				refresh-panels 
 			]
 		]
 	]
@@ -280,8 +280,7 @@ view/tight [
 	; necessarily need to be called before the attempt to generate any graphics
 	do [setup-paper 255.255.255 400 600]
 
-	version-area: panel
-		1x600
+	version-area: panel 400x220 255.0.0 [
 		below 
 		save-rate: drop-down 120 "Save Rate" data ["5" "10" "15" "20" "Never"] on-change [
 			change-detection-rate
@@ -301,4 +300,5 @@ view/tight [
 		previous-v: button 120 "(Previous)" [version-change "-"]
 		empty: text
 		write: button 120 "Write to File" [write-file]
+	]
 ]
