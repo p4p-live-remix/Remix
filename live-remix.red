@@ -169,10 +169,6 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 ;;; functions to detect enter keystroke
 
 enter-key-pressed: function[text][
-	; print commands
-	; print (length? text)
-	; print ((length? text) - 1)
-	; print text/(length? text)
 	if text/(length? text) = newline [
 		return true
 	]
@@ -183,7 +179,6 @@ enter-key-pressed: function[text][
 ;;; overriding the function in transpiler.red
 
 add: false
-
 add-function: function[text /extern add][
 	either add [
 		add: false
@@ -191,12 +186,18 @@ add-function: function[text /extern add][
 		add: true
 		formatter: "^/^/; newly generated function^/"
 		append formatter copy text
-		replace/all formatter "_" " "
-		replace/all formatter "|" "(?)"
+
 		append formatter ":^/"
 		append formatter tab
+		append formatter "show "
+		append formatter dbl-quote
+		append formatter copy text
+		append formatter dbl-quote
 		; print formatter
+		replace/all formatter "_" " "
+		replace/all formatter "|" "(?)"
 		append commands/text formatter
+
 	]
 ]
 
@@ -361,7 +362,7 @@ view/tight [
 
 
 				] [
-					print ["No errors. Valid code is provided"]
+					; print ["No errors. Valid code is provided"]
 				]
 			]
 		]
@@ -369,7 +370,7 @@ view/tight [
 	output-area: area 
 		400x600
 
-	paper: base 200x600 on-time [do-draw-animate]
+	paper: base 400x600 on-time [do-draw-animate]
 	on-down [
 		visualize-clicked-points event/offset/x event/offset/y
 	]
