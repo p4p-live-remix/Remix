@@ -167,6 +167,7 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 ]
 
 ;;; functions to detect enter keystroke
+
 enter-key-pressed: function[text][
 	; print commands
 	; print (length? text)
@@ -177,6 +178,85 @@ enter-key-pressed: function[text][
 	]
 	return false
 	; print parse text [((length? text) - 1) skip newline]
+]
+
+;;; overriding the function in transpiler.red
+
+add: false
+
+add-function: function[text /extern add][
+	either add [
+		add: false
+	] [
+		add: true
+		formatter: "^/^/; newly generated function^/"
+		append formatter copy text
+		replace/all formatter "_" " "
+		replace/all formatter "|" "(?)"
+		append formatter ":^/"
+		append formatter tab
+		; print formatter
+		append commands/text formatter
+	]
+]
+
+create-red-function-call: function [
+	{ Return the red equivalent of a function call. }
+	remix-call "Includes the name and parameter list"
+][
+	the-fnc: select function-map remix-call/fnc-name
+	if the-fnc = none [
+		; check if the name can be pluralised.
+		either (the-fnc: pluralised remix-call/fnc-name) [
+			print ["Careful:" remix-call/fnc-name "renamed." ]
+		][
+			; print ["Error:" remix-call/fnc-name "not declared."]
+			; function: copy remix-call/fnc-name
+			add-function remix-call/fnc-name
+			return ; changed from quit for live coding
+		]
+	]
+	if all [ ; check if it is a recursive call
+		the-fnc/red-code = none
+		the-fnc/fnc-def = []
+	][ ; at the moment no reference parameters in recursive calls
+		red-stmt: to-word remix-call/fnc-name
+		red-params: create-red-parameters remix-call/actual-params
+		return compose [(red-stmt) (red-params)]
+	]
+	either the-fnc/red-code [ ; an ordinary function call
+		red-stmt: first the-fnc/red-code
+		either (red-stmt = 'get-item) or (red-stmt = 'set-item) [
+			red-params: deal-with-word-key remix-call/actual-params
+		][
+			red-params: create-red-parameters remix-call/actual-params
+		]
+		return compose [(red-stmt) (red-params)]
+	][ ; a reference function call
+		copy-fnc: copy/deep the-fnc/fnc-def
+		formals: the-fnc/formal-parameters
+		actual-parameters: copy []
+		bind-word: none
+		forall formals [
+			formal-param: first formals
+			actual-param: pick remix-call/actual-params (index? formals)
+			either (first formal-param) = #"#" [
+				if actual-param/type <> "variable" [
+					print "Error: The actual parameter for a reference parameter must be a variable."
+					quit
+				]
+				bind-word: to-word actual-param/name ; doesn't matter if more than one
+				replace/all/deep copy-fnc (to-word formal-param) bind-word
+				; there is a potential problem here
+				; an existing variable in the function code could have the same name
+				; as the actual parameter
+			][
+				append actual-parameters actual-param
+			]
+		]
+		red-params: create-red-parameters actual-parameters
+		compose/deep [do reduce [do bind [(copy-fnc)] quote (bind-word) (red-params)]]
+	]
 ]
 
 ; run (load into Red runtime) the standard remix library
@@ -264,6 +344,7 @@ visualize-clicked-points: func [
 		refresh-panels
 ]
 
+
 view/tight [
 	title "Live"
 	commands: area 
@@ -276,18 +357,19 @@ view/tight [
 				]
 			]
 			if (enter-key-pressed commands/text) [
-				print "WORKS"
-			]
-			attempt [
-				refresh-panels 
-			]
+				either error? result: try [refresh-panels] [
 
+
+				] [
+					print ["No errors. Valid code is provided"]
+				]
+			]
 		]
 
 	output-area: area 
 		400x600
 
-	paper: base 400x600 on-time [do-draw-animate]
+	paper: base 200x600 on-time [do-draw-animate]
 	on-down [
 		visualize-clicked-points event/offset/x event/offset/y
 	]
