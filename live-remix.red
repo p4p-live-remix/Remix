@@ -168,34 +168,38 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 
 ;;; functions to detect enter keystroke
 
-enter-key-pressed: function[text][
-	if text/(length? text) = newline [
+command-lines: 1
+
+enter-key-pressed: function[text /extern command-lines][
+	length: (length? split text newline)
+	if (length <> command-lines)[
+		command-lines: length
 		return true
 	]
 	return false
-	; print parse text [((length? text) - 1) skip newline]
 ]
 
 ;;; overriding the function in transpiler.red
 
-add: false
-add-function: function[text /extern add][
-	either add [
-		add: false
+add-check: false
+add-function: function[text /extern add-check][
+	either add-check [
+		add-check: false
 	] [
-		add: true
-		formatter: "^/^/; newly generated function^/"
+		add-check: true
+		formatter: copy "^/^/; newly generated function^/"
 		append formatter copy text
-
 		append formatter ":^/"
 		append formatter tab
 		append formatter "show "
 		append formatter dbl-quote
 		append formatter copy text
 		append formatter dbl-quote
-		; print formatter
+		append formatter newline
+
 		replace/all formatter "_" " "
 		replace/all formatter "|" "(?)"
+
 		append commands/text formatter
 
 	]
@@ -351,18 +355,21 @@ view/tight [
 	commands: area 
 		400x600 
 		on-key-up [
-			if count-enters commands/text [
-				attempt [
-					save-text commands/text
-					append version-select/data (to-string (length? memory-list))
-				]
-			]
+			; check if a a line is added or lost
 			if (enter-key-pressed commands/text) [
 				either error? result: try [refresh-panels] [
-
-
+					; if valid command
+					attempt [
+						refresh-panels
+					]
 				] [
-					; print ["No errors. Valid code is provided"]
+					; if line added is above threshold
+					if count-enters commands/text [
+						attempt [
+							save-text commands/text
+							append version-select/data (to-string (length? memory-list))
+						]
+					]
 				]
 			]
 		]
