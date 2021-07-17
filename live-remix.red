@@ -119,7 +119,9 @@ version-change: function [change] [
 		print "No Versions Made"
 	] [
 		; ensure a version is selected in the first place
-		if version-select/selected <> none [
+		either version-select/selected = none [
+			version-select/selected: 1
+		] [
 			either change = "+" [
 				if (to-integer (version-select/selected)) < (length? memory-list) [
 					version-select/selected: ((version-select/selected) + 1)
@@ -129,10 +131,10 @@ version-change: function [change] [
 					version-select/selected: ((version-select/selected) - 1)
 				]
 			]
-			commands/text: copy (memory-list/(to-integer (version-select/selected) ))
-			attempt [
-				refresh-panels 
-			]
+		]
+		commands/text: copy (memory-list/(to-integer (version-select/selected) ))
+		attempt [
+			refresh-panels 
 		]
 	]
 ]
@@ -169,7 +171,6 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 ;;; functions to detect enter keystroke
 
 command-lines: 1
-
 enter-key-pressed: function[text /extern command-lines][
 	length: (length? split text newline)
 	if (length <> command-lines)[
@@ -380,6 +381,13 @@ view/tight [
 	paper: base 400x600 on-time [do-draw-animate]
 	on-down [
 		visualize-clicked-points event/offset/x event/offset/y
+		; add line count check for length
+		if count-enters commands/text [
+			attempt [
+				save-text commands/text
+				append version-select/data (to-string (length? memory-list))
+			]
+		]
 	]
 
 	; setting up the graphics panel so that "on standard paper" will not
