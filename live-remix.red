@@ -240,7 +240,6 @@ visualize-clicked-points: func [
 		y [integer!]   {y-coordinate clicked on}
 	][
 		point-clicked-on-radius: 2
-		clear commands/text ; clear the input text panel
 		either (shape-drawing-method = "closed-shape") [
 			; Synchronize the points written in code with the 'remembered' clicked points
 			; the list of points will looks like the following:
@@ -271,14 +270,15 @@ visualize-clicked-points: func [
 
 			; process the latest clicked points
 			append points-clicked-on rejoin ["{" x ", " y "}"]
+			clear find/tail commands/text code-generation-note ; clear the input text panel below the auto code generation warning
 			case [
 				; plot a point
 				(length? points-clicked-on) = 1 [
-					commands/text: rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
+					append commands/text rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
 				]
 				; draw a line by joining two points
 				(length? points-clicked-on) = 2 [
-					commands/text: rejoin ["draw line from (" points-clicked-on/1 ") to (" points-clicked-on/2 ")"]
+					append commands/text rejoin ["draw line from (" points-clicked-on/1 ") to (" points-clicked-on/2 ")"]
 				]
 				; draw a polygon
 				(length? points-clicked-on) > 2 [
@@ -287,25 +287,26 @@ visualize-clicked-points: func [
 					; remove the last comma in the `points-of-shape` string (the newline
 					; following the comma is unaffected)
 					remove at points-of-shape ((length? points-of-shape) - 1)
-					commands/text: rejoin ["auto-generated-shape : make shape of {^/" points-of-shape "}^/^/" "auto-generated-shape [size] : 1^/" "draw (auto-generated-shape)"]
+					append commands/text rejoin ["auto-generated-shape : make shape of {^/" points-of-shape "}^/^/" "auto-generated-shape [size] : 1^/" "draw (auto-generated-shape)"]
 				]
 			]
 		][
 			; when shape-drawing-method = "circle"
 			append points-clicked-on rejoin ["{" x ", " y "}"]
+			clear find/tail commands/text code-generation-note ; clear the input text panel below the auto code generation warning
 			case [
 				; define the center
 				(length? points-clicked-on) = 1 [
 					x1: x
 					y1: y
-					commands/text: rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
+					append commands/text rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
 				]
 				; draw circle as radius is now provided
 				(length? points-clicked-on) = 2 [
 					x2: x
 					y2: y
 					radius:  to-integer (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** 0.5
-					commands/text: rejoin ["draw circle of (" radius ") at (" points-clicked-on/1 ")"]
+					append commands/text rejoin ["draw circle of (" radius ") at (" points-clicked-on/1 ")"]
 					clear points-clicked-on
 				]
 			]
@@ -313,10 +314,15 @@ visualize-clicked-points: func [
 		refresh-panels
 ]
 
+; Auto code generation area warning
+code-generation-note: "^/^/AUTO-GENERATED CODE BELOW (Write your code above this only).^/=============================================^/^/"
+commands-text: copy code-generation-note
+
 view/tight [
 	title "Live"
 	commands: area 
 		400x600 
+		commands-text
 		on-key-up [
 			if count-enters commands/text [
 				attempt [
