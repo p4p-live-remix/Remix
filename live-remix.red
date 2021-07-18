@@ -239,10 +239,36 @@ visualize-clicked-points: func [
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
 	][
+		case [
+			(length? points-clicked-on) = 1 [
+				; Synchronize the first point written in code with the 'remembered' first point
+				; The statement from which the center is to be extracted will look like the following:
+				; draw circle of (2) at ({190, 124})
+
+				if (not ((length? commands/text) = none)) [
+					text-to-process: copy commands/text
+					; start extracting the code auto-generated when points are clicked on
+					text-to-process: find text-to-process ") at ("
+					if (not ((length? text-to-process) = none)) [
+						; find the opening bracket of the points list in remix code
+						text-to-process: find text-to-process "{"
+						reverse text-to-process
+						; locate where the point description ends
+						text-to-process: find text-to-process ")}"
+						; remove the closing bracket 
+						remove/part text-to-process 1
+						reverse text-to-process
+						points-clicked-on: copy []
+						append points-clicked-on text-to-process ; update the 'remembered' center
+					]
+				]
+			]
+		]
+
 		point-clicked-on-radius: 2
 		either (shape-drawing-method = "closed-shape") [
 			; Synchronize the points written in code with the 'remembered' clicked points
-			; the list of points will looks like the following:
+			; The list of points will looks like the following:
 			; {
 			; {x1, y1},
 			; {x2, y2},
@@ -297,12 +323,26 @@ visualize-clicked-points: func [
 			case [
 				; define the center
 				(length? points-clicked-on) = 1 [
-					x1: x
-					y1: y
 					append commands/text rejoin ["draw circle of (" point-clicked-on-radius ") at (" points-clicked-on/1 ")"]
 				]
 				; draw circle as radius is now provided
 				(length? points-clicked-on) = 2 [
+					; extract x-coordinate of first point
+					x1: copy points-clicked-on/1
+					x1: find/tail x1 "{"
+					reverse x1
+					x1: find/tail x1 ","
+					reverse x1
+					x1: to-integer x1
+
+					; extract y-coordinate of first point
+					y1: copy points-clicked-on/1
+					y1: find/tail y1 ", "
+					reverse y1
+					y1: find/tail y1 "}"
+					reverse y1
+					y1: to-integer y1
+					
 					x2: x
 					y2: y
 					radius:  to-integer (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** 0.5
