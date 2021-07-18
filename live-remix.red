@@ -177,7 +177,7 @@ enter-key-pressed: function[text /extern command-lines][
 		command-lines: length
 		return true
 	]
-	return false
+	return false	
 ]
 
 ;;; overriding the function in transpiler.red
@@ -189,19 +189,22 @@ add-function: function[text /extern add-check][
 	] [
 		add-check: true
 		formatter: copy "^/^/; newly generated function^/"
+		formatter-for-text: copy ""
 		append formatter copy text
 		append formatter ":^/"
-		append formatter tab
-		append formatter "show "
-		append formatter dbl-quote
-		append formatter copy text
-		append formatter dbl-quote
-		append formatter newline
+		append formatter-for-text tab
+		append formatter-for-text "showline "
+		append formatter-for-text dbl-quote
+		append formatter-for-text copy text
+		append formatter-for-text dbl-quote
 
 		replace/all formatter "_" " "
 		replace/all formatter "|" "(?)"
+		replace/all formatter-for-text "_" " "
+		replace/all formatter-for-text "|" "TBC"
 
 		append commands/text formatter
+		append commands/text formatter-for-text
 
 	]
 ]
