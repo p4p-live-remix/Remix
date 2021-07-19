@@ -365,61 +365,75 @@ commands-text: copy code-generation-note
 
 view/tight [
 	title "Live"
-	commands: area 
-		400x600 
-		commands-text
-		on-key-up [
-			if count-enters commands/text [
-				attempt [
-					save-text commands/text
-					append version-select/data (to-string (length? memory-list))
-				]
-			]
-			attempt [
-				refresh-panels 
-			]
-
-		]
-
-	output-area: area 
-		400x600
-
-	paper: base 400x600 on-time [do-draw-animate]
-	on-down [
-		visualize-clicked-points event/offset/x event/offset/y
-	]
-
-	; setting up the graphics panel so that "on standard paper" will not
-	; necessarily need to be called before the attempt to generate any graphics
-	do [setup-paper 255.255.255 400 600]
 
 	below
-	version-area: panel 400x220 255.0.0 [
-		below 
-		save-rate: drop-down 120 "Save Rate" data ["5" "10" "15" "20" "Never"] on-change [
-			change-detection-rate
-		]
-		version-select: drop-down 120 "Code Versions" data []
-		show-version: button 120 "Show Selected Version" [version-selection]
+	panel-1: panel 1200x600 158.167.247 [
+		below
+		commands: area 
+			400x300 
+			commands-text
+			on-key-up [
+				if count-enters commands/text [
+					attempt [
+						save-text commands/text
+						append version-select/data (to-string (length? memory-list))
+					]
+				]
+				attempt [
+					refresh-panels 
+				]
 
-		empty: text
-		new-name: area 120x20
-		rename-name: button 120 "Name Version" [
-			save-text commands/text
-			append version-select/data (copy new-name/text)
 			]
+		
+		live-commands: area
+			400x300
+
 		return
-		latest: button 120 "Latest" [latest-version]
-		next-v: button 120 "(Next)" [version-change "+"]
-		previous-v: button 120 "(Previous)" [version-change "-"]
-		empty: text
-		write: button 120 "Write to File" [write-file]
+		across
+		paper: base 400x600 on-time [do-draw-animate]
+		on-down [
+			visualize-clicked-points event/offset/x event/offset/y
+		]
+
+		; setting up the graphics panel so that "on standard paper" will not
+		; necessarily need to be called before the attempt to generate any graphics
+		do [setup-paper 255.255.255 400 600]
+
+		below
+		version-area: panel 360x220 247.158.158 [
+			below 
+			save-rate: drop-down 120 "Save Rate" data ["5" "10" "15" "20" "Never"] on-change [
+				change-detection-rate
+			]
+			version-select: drop-down 120 "Code Versions" data []
+			show-version: button 120 "Show Selected Version" [version-selection]
+
+			empty: text
+			new-name: area 120x20
+			rename-name: button 120 "Name Version" [
+				save-text commands/text
+				append version-select/data (copy new-name/text)
+				]
+			return
+			latest: button 120 "Latest" [latest-version]
+			next-v: button 120 "(Next)" [version-change "+"]
+			previous-v: button 120 "(Previous)" [version-change "-"]
+			empty: text
+			write: button 120 "Write to File" [write-file]
+		]
+
+		text "============================================="
+
+		live-points-area: panel 360x200 158.247.176 [
+			text "Select the shape drawing method"
+			return
+			radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
+			radio "circle" on-down [shape-drawing-method: "circle" clear points-clicked-on]
+		]
 	]
-	text "==============================================="
-	live-points-area: panel 400x200 0.255.0 [
-		text "Select the shape drawing method"
-		return
-		radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
-		radio "circle" on-down [shape-drawing-method: "circle" clear points-clicked-on]
+
+	panel-2: panel 1200x100 158.167.247 [
+		output-area: area 
+			1180x80
 	]
 ]
