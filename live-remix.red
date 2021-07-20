@@ -188,7 +188,7 @@ add-function: function[text /extern add-check][
 		add-check: false
 	] [
 		add-check: true
-		formatter: copy "^/^/; newly generated function^/"
+		formatter: copy "^/^/; recently generated function^/"
 		formatter-for-text: copy ""
 		append formatter copy text
 		append formatter ":^/"
@@ -197,6 +197,8 @@ add-function: function[text /extern add-check][
 		append formatter-for-text dbl-quote
 		append formatter-for-text copy text
 		append formatter-for-text dbl-quote
+		replace/all commands/text "^/; recently generated function" ""
+
 
 		replace/all formatter "_" " "
 		replace/all formatter "|" "(?)"
