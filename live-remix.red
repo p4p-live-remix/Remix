@@ -195,7 +195,6 @@ add-function: function[text /extern add-check][
 		append formatter-for-text "showline "
 		append formatter-for-text dbl-quote
 
-
 		; if the function has parameters
 		either ((find text "|") <> none )[
 			lines: split commands/text newline
@@ -207,9 +206,11 @@ add-function: function[text /extern add-check][
 					replace/all test " " "_"
 					if (test == text)[
 						; print line
-						append formatter copy text
+						append formatter copy line
 						append formatter ":^/"
 						append formatter-for-text copy line
+						replace/all formatter-for-text "(" " "
+						replace/all formatter-for-text ")" " "
 						break
 					]
 				]
@@ -217,14 +218,13 @@ add-function: function[text /extern add-check][
 		] [
 			append formatter copy text
 			append formatter ":^/"
-
 			append formatter-for-text copy text
-
-
 		]
-			replace/all commands/text "^/; recently generated function" ""
-			replace/all formatter "_" " "
 
+		replace/all commands/text "^/; recently generated function" ""
+		replace/all formatter "_" " "
+
+		append formatter-for-text " made"
 		append formatter-for-text dbl-quote
 		replace/all formatter-for-text "_" " "
 
