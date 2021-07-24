@@ -188,26 +188,61 @@ add-function: function[text /extern add-check][
 		add-check: false
 	] [
 		add-check: true
+
 		formatter: copy "^/^/; recently generated function^/"
 		formatter-for-text: copy ""
-		append formatter copy text
-		append formatter ":^/"
 		append formatter-for-text tab
 		append formatter-for-text "showline "
 		append formatter-for-text dbl-quote
-		append formatter-for-text copy text
+
+
+		; if the function has parameters
+		either ((find text "|") <> none )[
+			lines: split commands/text newline
+			foreach line lines [
+				if ((find line "(") <> none)[
+					letter: charset [#"A" - #"Z" #"a" - #"z"]
+					test: copy line
+					replace test ["(" any[letter] ")"] "|"
+					replace/all test " " "_"
+					if (test == text)[
+						; print line
+						append formatter copy text
+						append formatter ":^/"
+						append formatter-for-text copy line
+						break
+					]
+				]
+			]
+		] [
+			append formatter copy text
+			append formatter ":^/"
+
+			append formatter-for-text copy text
+
+
+		]
+			replace/all commands/text "^/; recently generated function" ""
+			replace/all formatter "_" " "
+
 		append formatter-for-text dbl-quote
-		replace/all commands/text "^/; recently generated function" ""
-
-
-		replace/all formatter "_" " "
-		replace/all formatter "|" "(?)"
 		replace/all formatter-for-text "_" " "
-		replace/all formatter-for-text "|" "TBC"
+
+
+		; append formatter-for-text tab
+		; append formatter-for-text "showline "
+		; append formatter-for-text dbl-quote
+		; append formatter-for-text copy text
+		; append formatter-for-text dbl-quote
+
+
+		; replace/all formatter "_" " "
+		; replace/all formatter "|" "(?)"
+		; replace/all formatter-for-text "_" " "
+		; replace/all formatter-for-text "|" "TBC"
 
 		append commands/text formatter
 		append commands/text formatter-for-text
-
 	]
 ]
 
