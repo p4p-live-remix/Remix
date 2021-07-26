@@ -236,6 +236,26 @@ add-function: function[text /extern add-check][
 	]
 ]
 
+;; return if the current command area is filled and unique
+unique-and-filled: function[text /extern memory-list][
+	if (text = "")[ ; check if empty
+		return false
+	]
+	;;return here
+	text-copy: copy text
+	replace/all text-copy newline ""
+	foreach memory memory-list [ ; check uniqueness
+		memory-copy: copy memory
+		replace/all memory-copy newline "" 
+		if (memory-copy = text-copy) [ ; compare while ignoring new lines
+			print "DUP"
+			return false
+		]
+	]
+	print "SAFE"
+	return true
+]
+
 ; redefine existing function to generate function
 create-red-function-call: function [
 	{ Return the red equivalent of a function call. }
@@ -533,9 +553,11 @@ view/tight [
 					] [
 						; if line added is above threshold
 						if count-enters commands/text [
-							attempt [
-								save-text commands/text
-								append version-select/data (to-string (length? memory-list))
+							if unique-and-filled commands/text [
+								attempt [
+									save-text commands/text
+									append version-select/data (to-string (length? memory-list))
+								]
 							]
 						]
 					]
