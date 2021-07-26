@@ -171,10 +171,11 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 ;;; functions to detect enter keystroke
 
 command-lines: 1
+; returns if last keystroke is enter
 enter-key-pressed: function[text /extern command-lines][
 	length: (length? split text newline)
 	if (length <> command-lines)[
-		command-lines: length
+		command-lines: length ; update new length
 		return true
 	]
 	return false	
@@ -182,7 +183,7 @@ enter-key-pressed: function[text /extern command-lines][
 
 ;;; overriding the function in transpiler.red
 
-add-check: false
+add-check: false ; variable to only append once
 add-function: function[text /extern add-check][
 	either add-check [
 		add-check: false
@@ -198,14 +199,14 @@ add-function: function[text /extern add-check][
 		; if the function has parameters
 		either ((find text "|") <> none )[
 			lines: split commands/text newline
+			; find the line which contains the new function
 			foreach line lines [
 				if ((find line "(") <> none)[
 					letter: charset [#"A" - #"Z" #"a" - #"z"]
 					test: copy line
-					replace test ["(" any[letter] ")"] "|"
+					replace test ["(" any[letter] ")"] "|" ; replace the parameter aspect
 					replace/all test " " "_"
-					if (test == text)[
-						; print line
+					if (test == text)[ ; check to ensure the correct line is found
 						append formatter copy line
 						append formatter ":^/"
 						append formatter-for-text copy line
@@ -221,6 +222,7 @@ add-function: function[text /extern add-check][
 			append formatter-for-text copy text
 		]
 
+		; replace previous comment
 		replace/all commands/text "^/; recently generated function" ""
 		replace/all formatter "_" " "
 
@@ -228,11 +230,13 @@ add-function: function[text /extern add-check][
 		append formatter-for-text dbl-quote
 		replace/all formatter-for-text "_" " "
 
+		; append function declaration to command area
 		append commands/text formatter
 		append commands/text formatter-for-text
 	]
 ]
 
+; redefine existing function to generate function
 create-red-function-call: function [
 	{ Return the red equivalent of a function call. }
 	remix-call "Includes the name and parameter list"
