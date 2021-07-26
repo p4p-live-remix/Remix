@@ -119,7 +119,9 @@ version-change: function [change] [
 		print "No Versions Made"
 	] [
 		; ensure a version is selected in the first place
-		if version-select/selected <> none [
+		either version-select/selected = none [
+			version-select/selected: 1
+		] [
 			either change = "+" [
 				if (to-integer (version-select/selected)) < (length? memory-list) [
 					version-select/selected: ((version-select/selected) + 1)
@@ -129,10 +131,10 @@ version-change: function [change] [
 					version-select/selected: ((version-select/selected) - 1)
 				]
 			]
-			commands/text: copy (memory-list/(to-integer (version-select/selected) ))
-			attempt [
-				refresh-panels 
-			]
+		]
+		commands/text: copy (memory-list/(to-integer (version-select/selected) ))
+		attempt [
+			refresh-panels 
 		]
 	]
 ]
@@ -164,6 +166,134 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 		]
 	]
 	
+]
+
+;;; functions to detect enter keystroke
+
+command-lines: 1
+; returns if last keystroke is enter
+enter-key-pressed: function[text /extern command-lines][
+	length: (length? split text newline)
+	if (length <> command-lines)[
+		command-lines: length ; update new length
+		return true
+	]
+	return false	
+]
+
+;;; overriding the function in transpiler.red
+
+add-check: false ; variable to only append once
+add-function: function[text /extern add-check][
+	either add-check [
+		add-check: false
+	] [
+		add-check: true
+
+		formatter: copy "^/^/; recently generated function^/"
+		formatter-for-text: copy ""
+		append formatter-for-text tab
+		append formatter-for-text "showline "
+		append formatter-for-text dbl-quote
+
+		; if the function has parameters
+		either ((find text "|") <> none )[
+			lines: split commands/text newline
+			; find the line which contains the new function
+			foreach line lines [
+				if ((find line "(") <> none)[
+					letter: charset [#"A" - #"Z" #"a" - #"z"]
+					test: copy line
+					replace test ["(" any[letter] ")"] "|" ; replace the parameter aspect
+					replace/all test " " "_"
+					if (test == text)[ ; check to ensure the correct line is found
+						append formatter copy line
+						append formatter ":^/"
+						append formatter-for-text copy line
+						replace/all formatter-for-text "(" ""
+						replace/all formatter-for-text ")" ""
+						break
+					]
+				]
+			]
+		] [
+			append formatter copy text
+			append formatter ":^/"
+			append formatter-for-text copy text
+		]
+
+		; replace previous comment
+		replace/all commands/text "^/; recently generated function" ""
+		replace/all formatter "_" " "
+
+		append formatter-for-text " made"
+		append formatter-for-text dbl-quote
+		replace/all formatter-for-text "_" " "
+
+		; append function declaration to command area
+		append commands/text formatter
+		append commands/text formatter-for-text
+	]
+]
+
+; redefine existing function to generate function
+create-red-function-call: function [
+	{ Return the red equivalent of a function call. }
+	remix-call "Includes the name and parameter list"
+][
+	the-fnc: select function-map remix-call/fnc-name
+	if the-fnc = none [
+		; check if the name can be pluralised.
+		either (the-fnc: pluralised remix-call/fnc-name) [
+			print ["Careful:" remix-call/fnc-name "renamed." ]
+		][
+			; print ["Error:" remix-call/fnc-name "not declared."]
+			; function: copy remix-call/fnc-name
+			add-function remix-call/fnc-name
+			return ; changed from quit for live coding
+		]
+	]
+	if all [ ; check if it is a recursive call
+		the-fnc/red-code = none
+		the-fnc/fnc-def = []
+	][ ; at the moment no reference parameters in recursive calls
+		red-stmt: to-word remix-call/fnc-name
+		red-params: create-red-parameters remix-call/actual-params
+		return compose [(red-stmt) (red-params)]
+	]
+	either the-fnc/red-code [ ; an ordinary function call
+		red-stmt: first the-fnc/red-code
+		either (red-stmt = 'get-item) or (red-stmt = 'set-item) [
+			red-params: deal-with-word-key remix-call/actual-params
+		][
+			red-params: create-red-parameters remix-call/actual-params
+		]
+		return compose [(red-stmt) (red-params)]
+	][ ; a reference function call
+		copy-fnc: copy/deep the-fnc/fnc-def
+		formals: the-fnc/formal-parameters
+		actual-parameters: copy []
+		bind-word: none
+		forall formals [
+			formal-param: first formals
+			actual-param: pick remix-call/actual-params (index? formals)
+			either (first formal-param) = #"#" [
+				if actual-param/type <> "variable" [
+					print "Error: The actual parameter for a reference parameter must be a variable."
+					quit
+				]
+				bind-word: to-word actual-param/name ; doesn't matter if more than one
+				replace/all/deep copy-fnc (to-word formal-param) bind-word
+				; there is a potential problem here
+				; an existing variable in the function code could have the same name
+				; as the actual parameter
+			][
+				append actual-parameters actual-param
+			]
+		]
+		red-params: create-red-parameters actual-parameters
+		compose/deep [do reduce [do bind [(copy-fnc)] quote (bind-word) (red-params)]]
+	]
 ]
 
 ; run (load into Red runtime) the standard remix library
@@ -394,16 +524,22 @@ view/tight [
 			400x300 
 			commands-default-text
 			on-key-up [
-				if count-enters commands/text [
-					attempt [
-						save-text commands/text
-						append version-select/data (to-string (length? memory-list))
+				if (enter-key-pressed commands/text) [
+					either error? result: try [refresh-panels] [
+						; if valid command
+						attempt [
+							refresh-panels
+						]
+					] [
+						; if line added is above threshold
+						if count-enters commands/text [
+							attempt [
+								save-text commands/text
+								append version-select/data (to-string (length? memory-list))
+							]
+						]
 					]
 				]
-				attempt [
-					refresh-panels 
-				]
-
 			]
 
 		auto-code-generation-panel: panel 400x50 247.247.158 [
