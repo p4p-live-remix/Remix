@@ -477,7 +477,7 @@ visualize-clicked-points: func [
 			]
 		][
 			; when shape-drawing-method = "circle"
-			append points-clicked-on rejoin ["{" x ", " y "}"]
+			append points-clicked-on rejoin ["{" (to-string (round/to x grid-snap)) ", " (to-string (round/to y grid-snap)) "}"]
 			clear live-commands/text
 			case [
 				; define the center
