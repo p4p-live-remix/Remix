@@ -248,11 +248,9 @@ unique-and-filled: function[text /extern memory-list][
 		memory-copy: copy memory
 		replace/all memory-copy newline "" 
 		if (memory-copy = text-copy) [ ; compare while ignoring new lines
-			print "DUP"
 			return false
 		]
 	]
-	print "SAFE"
 	return true
 ]
 
@@ -385,6 +383,32 @@ refresh-panels: func [
 shape-drawing-method: "closed-shape"
 
 grid-snap: 25
+grid-snap-active: true
+
+change-grid-size: function [
+	{ Change grid snap rating}
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	either grid-size/text = "None" [
+		grid-snap-active: false
+		grid-snap: 1
+	][
+		grid-snap-active: true
+		grid-snap: to-integer (copy grid-size/text)
+	]
+
+	change-grid-display
+]
+
+change-grid-display: function [
+	/extern grid-snap [integer!]  {Snap dimension}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+][
+	; if grid-snap-active [
+
+	; ]
+]
 
 visualize-clicked-points: func [
 		{ Visualize the points based on the number of points clicked }
@@ -631,6 +655,10 @@ view/tight [
 			return 
 			button "Clear temporary code area" [clear-temp-code-area]
 			button "Clear permanent code area" [clear-permanent-code-area]
+			return
+			grid-size: drop-down 120 "Grid Size" data ["5" "10" "25" "50" "None"] on-change [
+				change-grid-size
+			]
 		]
 	]
 
