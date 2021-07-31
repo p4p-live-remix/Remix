@@ -31,6 +31,10 @@ run-remix: function [
 	/running-first-time
 	/extern successful-parse
 ][
+	; append the remix code that generates the cross which appears in the centre of the
+	; graphical area
+	centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
+	code: rejoin [code centre-crosshair-remix-code]
 	; N.B. remember to include the standard-lib
 	; source: append (append (copy "^/") (read %standard-lib.rem)) "^/"
 	source: copy "^/"
@@ -296,6 +300,50 @@ create-red-function-call: function [
 	]
 ]
 
+draw-line: function [
+    { Overridden version - Draw a line from start to finish. }
+    start [hash! map!] "with x and y"
+    finish [hash! map!] "with x and y"
+][
+    start: point-to-pair start
+    finish: point-to-pair finish
+		; offsetting the start and finish points to make them relative to the centre
+		; of the graphical area
+    start/1: start/1 + 200
+    start/2: start/2 + 300
+    finish/1: finish/1 + 200
+    finish/2: finish/2 + 300
+    either draw-layer = 0 [
+        line-command: compose [line (start * 2) (finish * 2)]
+        draw background append copy background-pen line-command
+    ][
+        line-command: compose [line (start) (finish)]
+        append/only draw-command-layers/:draw-layer line-command
+    ]
+    none
+]
+
+draw-circle: function [
+    { Overridden version - Draw a circle. }
+    radius [number!]
+    centre [hash! map!] "x, y"
+][
+    centre: point-to-pair centre
+		; offsetting the centre to make them relative to the centre
+		; of the graphical area
+    centre/1: centre/1 + 200
+    centre/2: centre/2 + 300
+    either draw-layer = 0 [
+        circle-command: reduce ['circle centre * 2 radius * 2]
+        draw background append copy background-pen circle-command
+    ][
+        circle-command: reduce ['circle centre radius]
+        append/only draw-command-layers/:draw-layer circle-command
+    ]
+    none
+]
+
+
 ; run (load into Red runtime) the standard remix library
 stdlib: read %standard-lib.rem
 run-remix/running-first-time stdlib
@@ -369,6 +417,10 @@ visualize-clicked-points: func [
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
 	][
+		; offset the coordinates so that they are relative to the centre of the 
+		; the graphical area
+		x: x - 200
+		y: y - 300
 		; Synchronize the points written in code with the 'remembered' points
 		case [
 			(length? points-clicked-on) = 1 [
