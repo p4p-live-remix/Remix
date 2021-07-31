@@ -202,7 +202,7 @@ add-function: function[text /extern add-check][
 			; find the line which contains the new function
 			foreach line lines [
 				if ((find line "(") <> none)[
-					letter: charset [#"A" - #"Z" #"a" - #"z"]
+					letter: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ]
 					test: copy line
 					replace test ["(" any[letter] ")"] "|" ; replace the parameter aspect
 					replace/all test " " "_"
@@ -265,9 +265,9 @@ create-red-function-call: function [
 		either (the-fnc: pluralised remix-call/fnc-name) [
 			print ["Careful:" remix-call/fnc-name "renamed." ]
 		][
-			; print ["Error:" remix-call/fnc-name "not declared."]
+			print ["Error:" remix-call/fnc-name "not declared."]
 			; function: copy remix-call/fnc-name
-			add-function remix-call/fnc-name
+			; add-function remix-call/fnc-name
 			return ; changed from quit for live coding
 		]
 	]
@@ -360,6 +360,7 @@ refresh-panels: func [
 		{ Clears the input text and graphics panels and then executes the remix 
 		code in the input panel }
 ][
+
 		; first execute the necessary graphics related statements
 		run-remix precursor-statements
 		; clean the graphics area
@@ -376,7 +377,7 @@ refresh-panels: func [
 			clear points-clicked-on
 		]
 		; run the code
-		run-remix (rejoin [commands/text "^/" live-commands/text]) 
+		run-remix (rejoin [commands/text "^/" live-commands/text "^/" grid-generater-code]) 
 ]
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
@@ -397,8 +398,19 @@ change-grid-size: function [
 		grid-snap-active: true
 		grid-snap: to-integer (copy grid-size/text)
 	]
+	; grid-generater-code
+	refresh-panels
+]
 
-	change-grid-display
+grid-generater-code: function [
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	if grid-snap-active [
+		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+		return res
+	]
+	return ""	
 ]
 
 change-grid-display: function [
@@ -406,7 +418,7 @@ change-grid-display: function [
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
 ][
 	; if grid-snap-active [
-
+		; draw [circle 50x50 2]
 	; ]
 ]
 
@@ -656,7 +668,7 @@ view/tight [
 			button "Clear temporary code area" [clear-temp-code-area]
 			button "Clear permanent code area" [clear-permanent-code-area]
 			return
-			grid-size: drop-down 120 "Grid Size" data ["5" "10" "25" "50" "None"] on-change [
+			grid-size: drop-down 120 "Grid Size" data ["10" "25" "50" "None"] on-change [
 				change-grid-size
 			]
 		]
