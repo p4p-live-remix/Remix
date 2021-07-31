@@ -384,10 +384,13 @@ refresh-panels: func [
 ; corresponds to the radio buttons under "Select the shape drawing method"
 shape-drawing-method: "closed-shape"
 
+grid-snap: 25
+
 visualize-clicked-points: func [
 		{ Visualize the points based on the number of points clicked }
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
+		
 	][
 		; Synchronize the points written in code with the 'remembered' points
 		case [
@@ -450,7 +453,8 @@ visualize-clicked-points: func [
 		; process the latest clicked point
 		point-clicked-on-radius: 2
 		either (shape-drawing-method = "closed-shape") [
-			append points-clicked-on rejoin ["{" x ", " y "}"]
+			append points-clicked-on rejoin ["{" (to-string (round/to x grid-snap)) ", " (to-string (round/to y grid-snap)) "}"]
+
 			clear live-commands/text 
 			case [
 				; plot a point
