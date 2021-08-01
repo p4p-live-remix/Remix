@@ -82,6 +82,7 @@ memory-list: [] ; series of strings to store the commands at different verseions
 ; saving a current version into the list
 save-text: function [text][
 	append memory-list (copy text)
+	update-line-count
 	exit
 ]
 
@@ -169,6 +170,12 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 ]
 
 ;;; functions to detect enter keystroke
+
+; function which updates the line count, if for some reason it did not happen when a verseion changes
+update-line-count: function[/extern command-lines][
+	length: (length? split commands/text newline)
+	command-lines: length
+]
 
 command-lines: 1
 ; returns if last keystroke is enter
@@ -267,7 +274,9 @@ create-red-function-call: function [
 		][
 			; print ["Error:" remix-call/fnc-name "not declared."]
 			; function: copy remix-call/fnc-name
-			add-function remix-call/fnc-name
+			if (enter-key-pressed commands/text) [
+				add-function remix-call/fnc-name
+			]
 			return ; changed from quit for live coding
 		]
 	]
@@ -575,22 +584,20 @@ view/tight [
 			400x300 
 			commands-default-text
 			on-key-up [
-				if (enter-key-pressed commands/text) [
-					either error? result: try [refresh-panels] [
-						; if valid command
-						attempt [
-							refresh-panels
-						]
-					] [
-						; check if there is sufficient amount of lines added/removed
-						if count-enters commands/text [
-							; check if the code is 'unique'
-							if unique-and-filled commands/text [
-								; save the text and appending it as an option for user selection
-								attempt [
-									save-text commands/text
-									append version-select/data (to-string (length? memory-list))
-								]
+				either error? result: try [refresh-panels] [
+					; if valid command
+					attempt [
+						refresh-panels
+					]
+				] [
+					; check if there is sufficient amount of lines added/removed
+					if count-enters commands/text [
+						; check if the code is 'unique'
+						if unique-and-filled commands/text [
+							; save the text and appending it as an option for user selection
+							attempt [
+								save-text commands/text
+								append version-select/data (to-string (length? memory-list))
 							]
 						]
 					]
