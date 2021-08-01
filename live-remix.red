@@ -265,9 +265,9 @@ create-red-function-call: function [
 		either (the-fnc: pluralised remix-call/fnc-name) [
 			print ["Careful:" remix-call/fnc-name "renamed." ]
 		][
-			print ["Error:" remix-call/fnc-name "not declared."]
+			; print ["Error:" remix-call/fnc-name "not declared."]
 			; function: copy remix-call/fnc-name
-			; add-function remix-call/fnc-name
+			add-function remix-call/fnc-name
 			return ; changed from quit for live coding
 		]
 	]
