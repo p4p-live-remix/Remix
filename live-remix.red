@@ -24,6 +24,20 @@ prin: function [
 	append output-area/text output
 ]
 
+grid-snap: 25
+grid-snap-active: true
+
+grid-generater-code: function [
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	if grid-snap-active [
+		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+		return res
+	]
+	return ""	
+]
+
 run-remix: function [
 	{ Execute the remix code in "code". 
 	  Put the output in the output area. }
@@ -34,7 +48,7 @@ run-remix: function [
 	; append the remix code that generates the cross which appears in the centre of the
 	; graphical area
 	centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
-	code: rejoin [code centre-crosshair-remix-code]
+	code: rejoin [code centre-crosshair-remix-code grid-generater-code]
 	; N.B. remember to include the standard-lib
 	; source: append (append (copy "^/") (read %standard-lib.rem)) "^/"
 	source: copy "^/"
@@ -425,14 +439,11 @@ refresh-panels: func [
 			clear points-clicked-on
 		]
 		; run the code
-		run-remix (rejoin [commands/text "^/" live-commands/text "^/" grid-generater-code]) 
+		run-remix (rejoin [commands/text "^/" live-commands/text "^/"]) 
 ]
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
 shape-drawing-method: "closed-shape"
-
-grid-snap: 25
-grid-snap-active: true
 
 change-grid-size: function [
 	{ Change grid snap rating}
@@ -448,17 +459,6 @@ change-grid-size: function [
 	]
 	; grid-generater-code
 	refresh-panels
-]
-
-grid-generater-code: function [
-	/extern grid-snap [integer!]  {Snap change wanted}
-	/extern grid-snap-active [logic!]  {If we want the snap to happen}
-] [
-	if grid-snap-active [
-		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
-		return res
-	]
-	return ""	
 ]
 
 change-grid-display: function [
