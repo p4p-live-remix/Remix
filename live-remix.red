@@ -644,22 +644,24 @@ view/tight [
 			save-rate: drop-down 120 "5" data ["5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
 			]
-			version-select: drop-down 120 "Code Versions" data [] on-change [
+			return
+			text "Version Selected"
+			version-select: drop-down 120 "None Made" data [] on-change [
 				version-selection
 			]
-			
 			return
-			below
-			latest: button 120 "Latest" [latest-version]
-			next-v: button 120 "(Next)" [version-change "+"]
-			previous-v: button 120 "(Previous)" [version-change "-"]
-			; write: button 120 "Write to File" [write-file]
-			text
 			new-name: area 120x20
 			rename-name: button 120 "Name Version" [
 				save-text commands/text
 				append version-select/data (copy new-name/text)
 			]
+			return
+			next-v: button 120 "(Next)" [version-change "+"]
+			previous-v: button 120 "(Previous)" [version-change "-"]
+			return
+			latest: button 120 "Latest" [latest-version]
+
+			; write: button 120 "Write to File" [write-file]
 		]
 
 		text "============================================="
