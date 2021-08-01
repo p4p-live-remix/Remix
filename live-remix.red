@@ -413,15 +413,6 @@ grid-generater-code: function [
 	return ""	
 ]
 
-change-grid-display: function [
-	/extern grid-snap [integer!]  {Snap dimension}
-	/extern grid-snap-active [logic!]  {If we want the snap to happen}
-][
-	; if grid-snap-active [
-		; draw [circle 50x50 2]
-	; ]
-]
-
 visualize-clicked-points: func [
 		{ Visualize the points based on the number of points clicked }
 		x [integer!]   {x-coordinate clicked on}
