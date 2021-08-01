@@ -549,9 +549,11 @@ view/tight [
 							refresh-panels
 						]
 					] [
-						; if line added is above threshold
+						; check if there is sufficient amount of lines added/removed
 						if count-enters commands/text [
+							; check if the code is 'unique'
 							if unique-and-filled commands/text [
+								; save the text and appending it as an option for user selection
 								attempt [
 									save-text commands/text
 									append version-select/data (to-string (length? memory-list))
