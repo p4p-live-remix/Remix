@@ -639,25 +639,27 @@ view/tight [
 
 		below
 		version-area: panel 360x220 247.158.158 [
-			below 
-			save-rate: drop-down 120 "Save Rate" data ["5" "10" "15" "20" "Never"] on-change [
+			; below 
+			text "Save Rate"
+			save-rate: drop-down 120 "5" data ["5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
 			]
-			version-select: drop-down 120 "Code Versions" data []
-			show-version: button 120 "Show Selected Version" [version-selection]
-
-			empty: text
+			version-select: drop-down 120 "Code Versions" data [] on-change [
+				version-selection
+			]
+			
+			return
+			below
+			latest: button 120 "Latest" [latest-version]
+			next-v: button 120 "(Next)" [version-change "+"]
+			previous-v: button 120 "(Previous)" [version-change "-"]
+			; write: button 120 "Write to File" [write-file]
+			text
 			new-name: area 120x20
 			rename-name: button 120 "Name Version" [
 				save-text commands/text
 				append version-select/data (copy new-name/text)
-				]
-			return
-			latest: button 120 "Latest" [latest-version]
-			next-v: button 120 "(Next)" [version-change "+"]
-			previous-v: button 120 "(Previous)" [version-change "-"]
-			empty: text
-			write: button 120 "Write to File" [write-file]
+			]
 		]
 
 		text "============================================="
@@ -671,7 +673,8 @@ view/tight [
 			button "Clear temporary code area" [clear-temp-code-area]
 			button "Clear permanent code area" [clear-permanent-code-area]
 			return
-			grid-size: drop-down 120 "Grid Size" data ["10" "25" "50" "None"] on-change [
+			text "Grid Size"
+			grid-size: drop-down 120 "25" data ["10" "25" "50" "None"] on-change [
 				change-grid-size
 			]
 		]
