@@ -202,7 +202,7 @@ add-function: function[text /extern add-check][
 			; find the line which contains the new function
 			foreach line lines [
 				if ((find line "(") <> none)[
-					letter: charset [#"A" - #"Z" #"a" - #"z"]
+					letter: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ]
 					test: copy line
 					replace test ["(" any[letter] ")"] "|" ; replace the parameter aspect
 					replace/all test " " "_"
@@ -360,6 +360,7 @@ refresh-panels: func [
 		{ Clears the input text and graphics panels and then executes the remix 
 		code in the input panel }
 ][
+
 		; first execute the necessary graphics related statements
 		run-remix precursor-statements
 		; clean the graphics area
@@ -376,16 +377,56 @@ refresh-panels: func [
 			clear points-clicked-on
 		]
 		; run the code
-		run-remix (rejoin [commands/text "^/" live-commands/text]) 
+		run-remix (rejoin [commands/text "^/" live-commands/text "^/" grid-generater-code]) 
 ]
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
 shape-drawing-method: "closed-shape"
 
+grid-snap: 25
+grid-snap-active: true
+
+change-grid-size: function [
+	{ Change grid snap rating}
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	either grid-size/text = "None" [
+		grid-snap-active: false
+		grid-snap: 1
+	][
+		grid-snap-active: true
+		grid-snap: to-integer (copy grid-size/text)
+	]
+	; grid-generater-code
+	refresh-panels
+]
+
+grid-generater-code: function [
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	if grid-snap-active [
+		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+		return res
+	]
+	return ""	
+]
+
+change-grid-display: function [
+	/extern grid-snap [integer!]  {Snap dimension}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+][
+	; if grid-snap-active [
+		; draw [circle 50x50 2]
+	; ]
+]
+
 visualize-clicked-points: func [
 		{ Visualize the points based on the number of points clicked }
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
+		
 	][
 		; Synchronize the points written in code with the 'remembered' points
 		case [
@@ -448,7 +489,8 @@ visualize-clicked-points: func [
 		; process the latest clicked point
 		point-clicked-on-radius: 2
 		either (shape-drawing-method = "closed-shape") [
-			append points-clicked-on rejoin ["{" x ", " y "}"]
+			append points-clicked-on rejoin ["{" (to-string (round/to x grid-snap)) ", " (to-string (round/to y grid-snap)) "}"]
+
 			clear live-commands/text 
 			case [
 				; plot a point
@@ -471,7 +513,7 @@ visualize-clicked-points: func [
 			]
 		][
 			; when shape-drawing-method = "circle"
-			append points-clicked-on rejoin ["{" x ", " y "}"]
+			append points-clicked-on rejoin ["{" (to-string (round/to x grid-snap)) ", " (to-string (round/to y grid-snap)) "}"]
 			clear live-commands/text
 			case [
 				; define the center
@@ -628,6 +670,10 @@ view/tight [
 			return 
 			button "Clear temporary code area" [clear-temp-code-area]
 			button "Clear permanent code area" [clear-permanent-code-area]
+			return
+			grid-size: drop-down 120 "Grid Size" data ["10" "25" "50" "None"] on-change [
+				change-grid-size
+			]
 		]
 	]
 
