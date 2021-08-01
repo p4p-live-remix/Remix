@@ -236,7 +236,7 @@ add-function: function[text /extern add-check][
 	]
 ]
 
-;; return if the current command area is filled and unique
+;; returns true if the current command area is filled and unique to existing versions
 unique-and-filled: function[text /extern memory-list][
 	if (text = "")[ ; check if empty
 		return false
