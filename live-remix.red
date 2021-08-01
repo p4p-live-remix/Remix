@@ -444,6 +444,9 @@ refresh-panels: func [
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
 shape-drawing-method: "closed-shape"
+; corresponds to the radio buttons under "Select the shape drawing method"
+shape-interaction-method: "draw"
+
 
 change-grid-size: function [
 	{ Change grid snap rating}
@@ -714,7 +717,14 @@ view/tight [
 
 		text "============================================="
 
-		live-points-area: panel 360x200 158.247.176 [
+		live-points-area: panel 360x300 158.247.176 [
+			text "Select the shape interaction method"
+			return
+			shape-interaction-panel: panel 340x45 247.158.158 [
+				radio "draw-shape" on-down [shape-interaction-method: "draw"] data [true]
+				radio "replicate-shape" on-down [shape-interaction-method: "replicate"]
+			]
+			return
 			text "Select the shape drawing method"
 			return
 			radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
