@@ -156,6 +156,7 @@ count-enters: function[text /extern new-line /extern detection-rate /extern save
 	return false
 ]
 
+; updates the global line count
 update-global-line: function [
 	/extern new-line [integer!] {global number of lines}
 ] [
