@@ -82,6 +82,7 @@ memory-list: [] ; series of strings to store the commands at different verseions
 ; saving a current version into the list
 save-text: function [text][
 	append memory-list (copy text)
+	update-line-count
 	exit
 ]
 
@@ -155,6 +156,14 @@ count-enters: function[text /extern new-line /extern detection-rate /extern save
 	return false
 ]
 
+; updates the global line count
+update-global-line: function [
+	/extern new-line [integer!] {global number of lines}
+] [
+	length: (length? split commands/text newline)
+	new-line: length
+]
+
 ; function to modify the save rate
 change-detection-rate: function[/extern detection-rate /extern save-mode][
 	either save-rate/text = "Never" [
@@ -170,12 +179,22 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 
 ;;; functions to detect enter keystroke
 
+; function which updates the line count, if for some reason it did not happen when a verseion changes
+update-line-count: function[
+	/extern command-lines [integer!] { the number of lines  used for version control}
+	/extern new-line [integer!] { the global number of lines}
+	 ][
+	length: (length? split commands/text newline)
+	command-lines: length
+	new-line: length
+]
+
 command-lines: 1
 ; returns if last keystroke is enter
-enter-key-pressed: function[text /extern command-lines][
+enter-key-pressed: function[text /extern new-line][
 	length: (length? split text newline)
-	if (length <> command-lines)[
-		command-lines: length ; update new length
+	if (length <> new-line)[
+		new-line: length ; update new length
 		return true
 	]
 	return false	
@@ -267,7 +286,9 @@ create-red-function-call: function [
 		][
 			; print ["Error:" remix-call/fnc-name "not declared."]
 			; function: copy remix-call/fnc-name
-			add-function remix-call/fnc-name
+			if (enter-key-pressed commands/text) [ ; check if enter keystroke was pressed
+				add-function remix-call/fnc-name
+			]
 			return ; changed from quit for live coding
 		]
 	]
@@ -575,26 +596,26 @@ view/tight [
 			400x300 
 			commands-default-text
 			on-key-up [
-				if (enter-key-pressed commands/text) [
-					either error? result: try [refresh-panels] [
-						; if valid command
-						attempt [
-							refresh-panels
-						]
-					] [
-						; check if there is sufficient amount of lines added/removed
-						if count-enters commands/text [
-							; check if the code is 'unique'
-							if unique-and-filled commands/text [
-								; save the text and appending it as an option for user selection
-								attempt [
-									save-text commands/text
-									append version-select/data (to-string (length? memory-list))
-								]
+				either error? result: try [refresh-panels] [
+					; if valid command
+					attempt [
+						refresh-panels
+					]
+				] [
+					; check if there is sufficient amount of lines added/removed
+					if count-enters commands/text [
+						; check if the code is 'unique'
+						if unique-and-filled commands/text [
+							; save the text and appending it as an option for user selection
+							attempt [
+								save-text commands/text
+								append version-select/data (to-string (length? memory-list))
 							]
 						]
 					]
 				]
+				update-global-line
+
 			]
 
 		auto-code-generation-panel: panel 400x50 247.247.158 [
