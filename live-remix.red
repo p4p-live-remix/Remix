@@ -377,6 +377,7 @@ precursor-statements: read %precusor-graphics-statements.rem
 ; like: {0, 0}
 points-clicked-on: make block! 0
 
+
 refresh-panels: func [
 		{ Clears the input text and graphics panels and then executes the remix 
 		code in the input panel }
@@ -398,7 +399,9 @@ refresh-panels: func [
 			clear points-clicked-on
 		]
 		; run the code
-		run-remix (rejoin [commands/text "^/" live-commands/text "^/" grid-generater-code]) 
+		code-to-run: copy ( rejoin [commands/text "^/" live-commands/text "^/" grid-generater-code] )
+		run-remix code-to-run
+
 ]
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
@@ -597,10 +600,10 @@ view/tight [
 			commands-default-text
 			on-key-up [
 				either error? result: try [refresh-panels] [
-					; if valid command
-					attempt [
-						refresh-panels
-					]
+					; try [
+						; print ( memory-list / (memory-list / length)    )
+						run-remix ( memory-list/(length? memory-list)    );;;;;;toodood
+					; ]
 				] [
 					; check if there is sufficient amount of lines added/removed
 					if count-enters commands/text [
