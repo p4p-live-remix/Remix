@@ -28,7 +28,7 @@ black-pen : {
 === Shape Operations ===
 
 shape : {
-	position : {0, 0},
+	position : {centre-x, centre-y}, ; shape is relative to centre of graphical area
 	heading  : 0, ; straight up
 	size     : 5,
 	colour   : black,
