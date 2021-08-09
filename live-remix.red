@@ -26,6 +26,20 @@ prin: function [
 	append output-area/text output
 ]
 
+grid-snap: 25
+grid-snap-active: true
+
+grid-generater-code: function [
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	if grid-snap-active [
+		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+		return res
+	]
+	return ""	
+]
+
 run-remix: function [
 	{ Execute the remix code in "code". 
 	  Put the output in the output area. }
@@ -33,6 +47,10 @@ run-remix: function [
 	/running-first-time
 	/extern successful-parse
 ][
+	; append the remix code that generates the cross which appears in the centre of the
+	; graphical area
+	centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
+	code: rejoin [code centre-crosshair-remix-code grid-generater-code]
 	; N.B. remember to include the standard-lib
 	; source: append (append (copy "^/") (read %standard-lib.rem)) "^/"
 	source: copy "^/"
@@ -103,8 +121,7 @@ version-selection: function [] [
 ]
 
 ; function to display the latest TODO refine the function above with it to make this file less cluttered
-latest-version: function [/extern last-working] [
-	print last-working
+latest-version: function [] [
 	either (length? memory-list) = 0 [
 		print "No Versions Made"
 	] [
@@ -338,6 +355,50 @@ create-red-function-call: function [
 	]
 ]
 
+draw-line: function [
+    { Overridden version - Draw a line from start to finish. }
+    start [hash! map!] "with x and y"
+    finish [hash! map!] "with x and y"
+][
+    start: point-to-pair start
+    finish: point-to-pair finish
+		; offsetting the start and finish points to make them relative to the centre
+		; of the graphical area
+    start/1: start/1 + 200
+    start/2: start/2 + 300
+    finish/1: finish/1 + 200
+    finish/2: finish/2 + 300
+    either draw-layer = 0 [
+        line-command: compose [line (start * 2) (finish * 2)]
+        draw background append copy background-pen line-command
+    ][
+        line-command: compose [line (start) (finish)]
+        append/only draw-command-layers/:draw-layer line-command
+    ]
+    none
+]
+
+draw-circle: function [
+    { Overridden version - Draw a circle. }
+    radius [number!]
+    centre [hash! map!] "x, y"
+][
+    centre: point-to-pair centre
+		; offsetting the centre to make them relative to the centre
+		; of the graphical area
+    centre/1: centre/1 + 200
+    centre/2: centre/2 + 300
+    either draw-layer = 0 [
+        circle-command: reduce ['circle centre * 2 radius * 2]
+        draw background append copy background-pen circle-command
+    ][
+        circle-command: reduce ['circle centre radius]
+        append/only draw-command-layers/:draw-layer circle-command
+    ]
+    none
+]
+
+
 ; run (load into Red runtime) the standard remix library
 stdlib: read %standard-lib.rem
 run-remix/running-first-time stdlib
@@ -402,16 +463,14 @@ refresh-panels: func [
 			clear points-clicked-on
 		]
 		; run the code
-		code-to-run: copy ( rejoin [commands/text "^/" live-commands/text "^/" grid-generater-code] )
-		run-remix code-to-run
-
+		run-remix (rejoin [commands/text "^/" live-commands/text "^/"]) 
 ]
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
 shape-drawing-method: "closed-shape"
+; corresponds to the radio buttons under "Select the shape drawing method"
+shape-interaction-method: "draw"
 
-grid-snap: 25
-grid-snap-active: true
 
 change-grid-size: function [
 	{ Change grid snap rating}
@@ -445,65 +504,70 @@ visualize-clicked-points: func [
 		x [integer!]   {x-coordinate clicked on}
 		y [integer!]   {y-coordinate clicked on}
 		
-	][
-		; Synchronize the points written in code with the 'remembered' points
-		case [
-			(length? points-clicked-on) = 1 [
-				; Synchronize the first point written in code with the 'remembered' first point
-				; The statement from which the center is to be extracted will look like the following:
-				; draw circle of (2) at ({190, 124})
+][
+	; offset the coordinates so that they are relative to the centre of the 
+	; the graphical area
+	x: x - 200
+	y: y - 300
+	; Synchronize the points written in code with the 'remembered' points
+	case [
+		(length? points-clicked-on) = 1 [
+			; Synchronize the first point written in code with the 'remembered' first point
+			; The statement from which the center is to be extracted will look like the following:
+			; draw circle of (2) at ({190, 124})
 
-				if (not ((length? live-commands/text) = none)) [
-					text-to-process: copy live-commands/text
-					; start extracting the code auto-generated when points are clicked on
-					text-to-process: find text-to-process ") at ("
-					if (not ((length? text-to-process) = none)) [
-						; find the opening bracket of the points list in remix code
-						text-to-process: find text-to-process "{"
-						reverse text-to-process
-						; locate where the point description ends
-						text-to-process: find text-to-process ")}"
-						; remove the closing bracket 
-						remove/part text-to-process 1
-						reverse text-to-process
-						points-clicked-on: copy []
-						append points-clicked-on text-to-process ; update the 'remembered' center
-					]
-				]
-			]
-			(length? points-clicked-on) = 2 [
-				; to-complete
-			]
-			(length? points-clicked-on) > 2 [
-				; Synchronize the points written in code with the 'remembered' clicked points
-				; The list of points will looks like the following:
-				; {
-				; {x1, y1},
-				; {x2, y2},
-				; ... more points (no comma at the end)
-				; }
-				if (not ((length? live-commands/text) = none)) [
-					text-to-process: copy live-commands/text
-					; start extracting the code auto-generated when points are clicked on
-					text-to-process: find text-to-process "auto-generated-shape : make shape of {"
-					if (not ((length? text-to-process) = none)) [
-						; find the opening bracket of the points list in remix code
-						text-to-process: find text-to-process "{"
-						; remove the first bracket and the following newline character
-						remove/part text-to-process 2
-						reverse text-to-process
-						; locate where the list of points ends
-						text-to-process: find text-to-process "}^/"
-						; remove the closing bracket and the newline
-						remove/part text-to-process 2
-						reverse text-to-process
-						synced-points: split text-to-process ",^/"
-						points-clicked-on: copy synced-points ; update the 'remembered' points
-					]
+			if (not ((length? live-commands/text) = none)) [
+				text-to-process: copy live-commands/text
+				; start extracting the code auto-generated when points are clicked on
+				text-to-process: find text-to-process ") at ("
+				if (not ((length? text-to-process) = none)) [
+					; find the opening bracket of the points list in remix code
+					text-to-process: find text-to-process "{"
+					reverse text-to-process
+					; locate where the point description ends
+					text-to-process: find text-to-process ")}"
+					; remove the closing bracket 
+					remove/part text-to-process 1
+					reverse text-to-process
+					points-clicked-on: copy []
+					append points-clicked-on text-to-process ; update the 'remembered' center
 				]
 			]
 		]
+		(length? points-clicked-on) = 2 [
+			; to-complete
+		]
+		(length? points-clicked-on) > 2 [
+			; Synchronize the points written in code with the 'remembered' clicked points
+			; The list of points will looks like the following:
+			; {
+			; {x1, y1},
+			; {x2, y2},
+			; ... more points (no comma at the end)
+			; }
+			if (not ((length? live-commands/text) = none)) [
+				text-to-process: copy live-commands/text
+				; start extracting the code auto-generated when points are clicked on
+				text-to-process: find text-to-process "auto-generated-shape : make shape of {"
+				if (not ((length? text-to-process) = none)) [
+					; find the opening bracket of the points list in remix code
+					text-to-process: find text-to-process "{"
+					; remove the first bracket and the following newline character
+					remove/part text-to-process 2
+					reverse text-to-process
+					; locate where the list of points ends
+					text-to-process: find text-to-process "}^/"
+					; remove the closing bracket and the newline
+					remove/part text-to-process 2
+					reverse text-to-process
+					synced-points: split text-to-process ",^/"
+					points-clicked-on: copy synced-points ; update the 'remembered' points
+				]
+			]
+		]
+	]
 
+	either (shape-interaction-method = "draw") [
 		; process the latest clicked point
 		point-clicked-on-radius: 2
 		either (shape-drawing-method = "closed-shape") [
@@ -564,13 +628,21 @@ visualize-clicked-points: func [
 				]
 			]
 		]
-		refresh-panels
+	][
+		append commands/text rejoin ["^/^/replicated-shape : based on (" shapes-dropdown/text ")^/replicated-shape [position] : {" (x + 200) ", " (y + 300) "}^/draw (replicated-shape)"]
+	]
+	refresh-panels
 ]
 
-use-autogenerated-code: func [] [
+use-autogenerated-code: func [
+	name [string!] {the name of the shape}
+] [
 	if (commands/text = commands-default-text) [
 		clear commands/text
 	]
+	; live-commands/text 
+	formatted-name: copy (replace/all name " " "-") ; remove spacing
+	replace/all live-commands/text "auto-generated-shape" formatted-name ; replace template with name
 	commands/text: rejoin [commands/text "^/^/" live-commands/text]
 	clear live-commands/text
 	refresh-panels
@@ -585,6 +657,22 @@ clear-temp-code-area: func [] [
 clear-permanent-code-area: func [] [
 	commands/text: copy ""
 	refresh-panels
+]
+
+update-polygons-in-code: func [] [
+		; extract names of all polygons present in the commands area
+		lines-of-command: split commands/text newline
+		polygon-names: copy []
+		foreach line-of-command lines-of-command [
+			polygon-search-token: find line-of-command " : make shape of"
+			; print polygon-search-token
+			if (not (polygon-search-token = none)) [
+				; parse line-of-command [copy a-polygon to [" : make shape of" | " :make shape of" | ":make shape of"]]
+				a-polygon: replace line-of-command polygon-search-token ""
+				append polygon-names a-polygon
+			]
+		]
+		shapes-dropdown/data: polygon-names
 ]
 
 ; for user's code area
@@ -627,19 +715,36 @@ view/tight [
 
 			]
 
-		auto-code-generation-panel: panel 400x50 247.247.158 [
-			text 200x30 "AUTO-GENERATED CODE BELOW^/(Write your code above this only)"
+		auto-code-generation-panel: panel 400x100 247.247.158 [
+			text 400x30 "AUTO-GENERATED CODE BELOW (Write your code above this only)"
+			return
+			name: text 30x20 "Name:"
+			new-shape-name: area 120x20
 			button "Use auto-generated code" [
-				use-autogenerated-code ; bring created content to pernament area
-				; save the text into the dropdown and memory
+				; check if the shape is a polygon
+				either (length? points-clicked-on) > 2 [
+					; check if a name is provided
+					either (none? new-shape-name/text ) [
+						alert ["Please provide a name"]
+					] [
+						use-autogenerated-code new-shape-name/text ; bring created content to pernament area
+						; save the text into the dropdown and memory
+						save-text commands/text
+						append version-select/data (to-string (length? memory-list))
+						new-shape-name/text: copy "" ; reset name field
+						last-working: copy commands/text
+					]				
+				] [
+					use-autogenerated-code "" ; bring created content to pernament area
+					; save the text into the dropdown and memory
 					save-text commands/text
 					append version-select/data (to-string (length? memory-list))
-					last-working: copy commands/text
 				]
+			]
 		]
 		
 		live-commands: area
-			400x300
+			400x250
 			live-commands-default-text
 			on-key-up [
 				attempt [
@@ -692,7 +797,16 @@ view/tight [
 
 		text "============================================="
 
-		live-points-area: panel 360x200 158.247.176 [
+		live-points-area: panel 360x300 158.247.176 [
+			text "Select the shape interaction method"
+			return
+			shape-interaction-panel: panel 340x100 247.158.158 [
+				radio "draw-shape" on-down [shape-interaction-method: "draw"] data [true]
+				radio "replicate-shape" on-down [shape-interaction-method: "replicate" ]
+				return
+				shapes-dropdown: drop-down 120 "Choose shape" data [] on-down [update-polygons-in-code]
+			]
+			return
 			text "Select the shape drawing method"
 			return
 			radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
