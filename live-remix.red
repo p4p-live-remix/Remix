@@ -605,6 +605,7 @@ view/tight [
 				either error? result: try [refresh-panels] [
 					try [
 						run-remix last-working
+						colour-area/color: 255.0.0
 					]
 				] [
 					; check if there is sufficient amount of lines added/removed
@@ -619,8 +620,10 @@ view/tight [
 						]
 					]
 					last-working: copy commands/text
+					colour-area/color: 25.255.25
 				]
 				update-global-line
+
 
 			]
 
@@ -659,11 +662,16 @@ view/tight [
 		version-area: panel 360x220 247.158.158 [
 			; below 
 			text "Save Rate"
+			across
 			save-rate: drop-down 120 "5" data ["5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
 			]
+			text 70x30 ""
+			colour-area: panel 50x50 25.255.25
+
 			return
 			text "Version Selected"
+			across
 			version-select: drop-down 120 "None Made" data [] on-change [
 				version-selection
 			]
@@ -694,6 +702,7 @@ view/tight [
 			button "Clear permanent code area" [clear-permanent-code-area]
 			return
 			text "Grid Size"
+			across
 			grid-size: drop-down 120 "25" data ["10" "25" "50" "None"] on-change [
 				change-grid-size
 			]
