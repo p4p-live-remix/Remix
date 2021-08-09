@@ -100,6 +100,7 @@ memory-list: [] ; series of strings to store the commands at different verseions
 ; saving a current version into the list
 save-text: function [text][
 	append memory-list (copy text)
+	update-line-count
 	exit
 ]
 
@@ -173,6 +174,14 @@ count-enters: function[text /extern new-line /extern detection-rate /extern save
 	return false
 ]
 
+; updates the global line count
+update-global-line: function [
+	/extern new-line [integer!] {global number of lines}
+] [
+	length: (length? split commands/text newline)
+	new-line: length
+]
+
 ; function to modify the save rate
 change-detection-rate: function[/extern detection-rate /extern save-mode][
 	either save-rate/text = "Never" [
@@ -188,12 +197,22 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 
 ;;; functions to detect enter keystroke
 
+; function which updates the line count, if for some reason it did not happen when a verseion changes
+update-line-count: function[
+	/extern command-lines [integer!] { the number of lines  used for version control}
+	/extern new-line [integer!] { the global number of lines}
+	 ][
+	length: (length? split commands/text newline)
+	command-lines: length
+	new-line: length
+]
+
 command-lines: 1
 ; returns if last keystroke is enter
-enter-key-pressed: function[text /extern command-lines][
+enter-key-pressed: function[text /extern new-line][
 	length: (length? split text newline)
-	if (length <> command-lines)[
-		command-lines: length ; update new length
+	if (length <> new-line)[
+		new-line: length ; update new length
 		return true
 	]
 	return false	
@@ -285,7 +304,9 @@ create-red-function-call: function [
 		][
 			; print ["Error:" remix-call/fnc-name "not declared."]
 			; function: copy remix-call/fnc-name
-			add-function remix-call/fnc-name
+			if (enter-key-pressed commands/text) [ ; check if enter keystroke was pressed
+				add-function remix-call/fnc-name
+			]
 			return ; changed from quit for live coding
 		]
 	]
@@ -464,13 +485,15 @@ change-grid-size: function [
 	refresh-panels
 ]
 
-change-grid-display: function [
-	/extern grid-snap [integer!]  {Snap dimension}
+grid-generater-code: function [
+	/extern grid-snap [integer!]  {Snap change wanted}
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
-][
-	; if grid-snap-active [
-		; draw [circle 50x50 2]
-	; ]
+] [
+	if grid-snap-active [
+		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+		return res
+	]
+	return ""	
 ]
 
 visualize-clicked-points: func [
@@ -659,26 +682,26 @@ view/tight [
 			400x300 
 			commands-default-text
 			on-key-up [
-				if (enter-key-pressed commands/text) [
-					either error? result: try [refresh-panels] [
-						; if valid command
-						attempt [
-							refresh-panels
-						]
-					] [
-						; check if there is sufficient amount of lines added/removed
-						if count-enters commands/text [
-							; check if the code is 'unique'
-							if unique-and-filled commands/text [
-								; save the text and appending it as an option for user selection
-								attempt [
-									save-text commands/text
-									append version-select/data (to-string (length? memory-list))
-								]
+				either error? result: try [refresh-panels] [
+					; if valid command
+					attempt [
+						refresh-panels
+					]
+				] [
+					; check if there is sufficient amount of lines added/removed
+					if count-enters commands/text [
+						; check if the code is 'unique'
+						if unique-and-filled commands/text [
+							; save the text and appending it as an option for user selection
+							attempt [
+								save-text commands/text
+								append version-select/data (to-string (length? memory-list))
 							]
 						]
 					]
 				]
+				update-global-line
+
 			]
 
 		auto-code-generation-panel: panel 400x50 247.247.158 [
@@ -714,25 +737,29 @@ view/tight [
 
 		below
 		version-area: panel 360x220 247.158.158 [
-			below 
-			save-rate: drop-down 120 "Save Rate" data ["5" "10" "15" "20" "Never"] on-change [
+			; below 
+			text "Save Rate"
+			save-rate: drop-down 120 "5" data ["5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
 			]
-			version-select: drop-down 120 "Code Versions" data []
-			show-version: button 120 "Show Selected Version" [version-selection]
-
-			empty: text
+			return
+			text "Version Selected"
+			version-select: drop-down 120 "None Made" data [] on-change [
+				version-selection
+			]
+			return
 			new-name: area 120x20
 			rename-name: button 120 "Name Version" [
 				save-text commands/text
 				append version-select/data (copy new-name/text)
-				]
+			]
 			return
-			latest: button 120 "Latest" [latest-version]
 			next-v: button 120 "(Next)" [version-change "+"]
 			previous-v: button 120 "(Previous)" [version-change "-"]
-			empty: text
-			write: button 120 "Write to File" [write-file]
+			return
+			latest: button 120 "Latest" [latest-version]
+
+			; write: button 120 "Write to File" [write-file]
 		]
 
 		text "============================================="
@@ -755,7 +782,8 @@ view/tight [
 			button "Clear temporary code area" [clear-temp-code-area]
 			button "Clear permanent code area" [clear-permanent-code-area]
 			return
-			grid-size: drop-down 120 "Grid Size" data ["10" "25" "50" "None"] on-change [
+			text "Grid Size"
+			grid-size: drop-down 120 "25" data ["10" "25" "50" "None"] on-change [
 				change-grid-size
 			]
 		]
