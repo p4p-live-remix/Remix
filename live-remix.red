@@ -233,27 +233,31 @@ add-function: function[text /extern add-check][
 		add-check: true
 
 		formatter: copy "^/^/; recently generated function^/"
-		formatter-for-text: copy ""
-		append formatter-for-text tab
-		append formatter-for-text "showline "
-		append formatter-for-text dbl-quote
+		formatter-for-text: copy rejoin ["" tab "showline " dbl-quote]
 
 		; if the function has parameters
 		either ((find text "|") <> none )[
 			lines: split commands/text newline
 			; find the line which contains the new function
+			number: charset "0123456789"
 			foreach line lines [
-				if ((find line "(") <> none)[
-					letter: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ]
+				if (  ((find line "(") <> none) or ((find line "[") <> none) or ((find line number) <> none )    )[
+					character: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ": "]
 					test: copy line
-					replace test ["(" any[letter] ")"] "|" ; replace the parameter aspect
+					replace/all test ["(" any[character] ")"] "|" ; replace the parameter aspect
+					replace/all test ["[" any[character] "]"] "|" ; replace the parameter aspect
+					replace/all test [[number]] "|" ; replace the parameter aspect
 					replace/all test " " "_"
+					replace/all test "^-" ""
 					if (test == text)[ ; check to ensure the correct line is found
 						append formatter copy line
 						append formatter ":^/"
 						append formatter-for-text copy line
+						replace/all formatter "^-" ""
 						replace/all formatter-for-text "(" ""
 						replace/all formatter-for-text ")" ""
+						replace/all formatter-for-text "[" ""
+						replace/all formatter-for-text "]" ""
 						break
 					]
 				]
@@ -271,6 +275,14 @@ add-function: function[text /extern add-check][
 		; append formatter-for-text " made"
 		append formatter-for-text dbl-quote
 		replace/all formatter-for-text "_" " "
+
+		; todo add a check to see if it has made some change
+		if (formatter-for-text = (rejoin [tab "showline " dbl-quote]))[
+			return
+		]
+		; append formatter-for-text tab
+		; append formatter-for-text "showline "
+		; append formatter-for-text dbl-quote
 
 		; append function declaration to command area
 		append commands/text formatter
