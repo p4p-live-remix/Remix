@@ -793,10 +793,14 @@ view/tight [
 				radio "draw-shape" on-down [
 					shape-interaction-method: "draw"
 					shapes-dropdown/enabled?: false
+					close-shape/enabled?: true
+					circle-shape/enabled?: true
 					] data [true]
 				radio "replicate-shape" on-down [
 					shape-interaction-method: "replicate" 
 					shapes-dropdown/enabled?: true
+					close-shape/enabled?: false
+					circle-shape/enabled?: false
 				] 
 				return
 				shapes-dropdown: drop-down 120 "Choose shape" data [] disabled on-down [update-polygons-in-code]
@@ -804,8 +808,8 @@ view/tight [
 			return
 			text "Select the shape drawing method"
 			return
-			radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
-			radio "circle" on-down [shape-drawing-method: "circle" clear points-clicked-on]
+			close-shape: radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
+			circle-shape: radio "circle" on-down [shape-drawing-method: "circle" clear points-clicked-on]
 			return 
 			button "Clear temporary code area" [clear-temp-code-area]
 			button "Clear permanent code area" [clear-permanent-code-area]
