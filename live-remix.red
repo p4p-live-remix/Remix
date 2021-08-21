@@ -486,6 +486,8 @@ change-grid-size: function [
 	]
 	; grid-generater-code
 	refresh-panels
+	; clear the background grid
+	do [setup-paper 255.255.255 400 600]
 ]
 
 visualize-clicked-points: func [
