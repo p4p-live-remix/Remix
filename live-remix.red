@@ -33,10 +33,10 @@ grid-generater-code: function [
 	/extern grid-snap [integer!]  {Snap change wanted}
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
 ] [
-	if grid-snap-active [
-		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
-		return res
-	]
+	; if grid-snap-active [
+	; 	res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (400 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (600 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+	; 	return res
+	; ]
 	return ""	
 ]
 
@@ -790,10 +790,16 @@ view/tight [
 			text "Select the shape interaction method"
 			return
 			shape-interaction-panel: panel 340x100 247.158.158 [
-				radio "draw-shape" on-down [shape-interaction-method: "draw"] data [true]
-				radio "replicate-shape" on-down [shape-interaction-method: "replicate" ]
+				radio "draw-shape" on-down [
+					shape-interaction-method: "draw"
+					shapes-dropdown/enabled?: false
+					] data [true]
+				radio "replicate-shape" on-down [
+					shape-interaction-method: "replicate" 
+					shapes-dropdown/enabled?: true
+				] 
 				return
-				shapes-dropdown: drop-down 120 "Choose shape" data [] on-down [update-polygons-in-code]
+				shapes-dropdown: drop-down 120 "Choose shape" data [] disabled on-down [update-polygons-in-code]
 			]
 			return
 			text "Select the shape drawing method"
