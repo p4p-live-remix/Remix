@@ -40,6 +40,13 @@ grid-generater-code: function [
 	return ""	
 ]
 
+; remix code that generates a cross in the centre of the
+; graphical area
+centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
+; remix code for changing between layers 0 and 1
+to-layer-zero: "^/draw on layer 0"
+to-layer-one: "^/draw on layer 1"
+
 run-remix: function [
 	{ Execute the remix code in "code". 
 	  Put the output in the output area. }
@@ -47,10 +54,6 @@ run-remix: function [
 	/running-first-time
 	/extern successful-parse
 ][
-	; append the remix code that generates the cross which appears in the centre of the
-	; graphical area
-	centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
-	code: rejoin [code centre-crosshair-remix-code grid-generater-code]
 	; N.B. remember to include the standard-lib
 	; source: append (append (copy "^/") (read %standard-lib.rem)) "^/"
 	source: copy "^/"
@@ -488,6 +491,8 @@ change-grid-size: function [
 	refresh-panels
 	; clear the background grid
 	do [setup-paper 255.255.255 400 600]
+	; draw the updated grid and center crosshair in the background
+	do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
 ]
 
 visualize-clicked-points: func [
@@ -753,6 +758,9 @@ view/tight [
 		; setting up the graphics panel so that "on standard paper" will not
 		; necessarily need to be called before the attempt to generate any graphics
 		do [setup-paper 255.255.255 400 600]
+		; draw the grid and the center crosshair in the background when the gui is 
+		; first created
+		do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
 
 		below
 		version-area: panel 360x220 247.158.158 [
