@@ -277,7 +277,7 @@ add-function: function[text /extern add-check][
 		replace/all formatter-for-text "_" " "
 
 		; todo add a check to see if it has made some change
-		if (formatter-for-text = (rejoin [tab "showline " dbl-quote]))[
+		if (formatter-for-text = (rejoin [tab "showline " dbl-quote dbl-quote]))[
 			return
 		]
 		; append formatter-for-text tab
