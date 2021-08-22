@@ -258,6 +258,7 @@ add-function: function[text /extern add-check][
 						replace/all formatter-for-text ")" ""
 						replace/all formatter-for-text "[" ""
 						replace/all formatter-for-text "]" ""
+						replace/all formatter [[number]] "(num)" 
 						break
 					]
 				]
