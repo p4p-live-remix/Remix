@@ -246,7 +246,13 @@ add-function: function[text /extern add-check][
 				if ((find line "(") <> none)[
 					letter: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ]
 					test: copy line
+<<<<<<< Updated upstream
 					replace test ["(" any[letter] ")"] "|" ; replace the parameter aspect
+=======
+					replace/all test ["(" any[character] ")"] "|" ; replace the parameter aspect
+					replace/all test ["[" any[character] "]"] "|" ; replace the parameter aspect
+					replace/all test any[number] "|" ; replace the parameter aspect
+>>>>>>> Stashed changes
 					replace/all test " " "_"
 					if (test == text)[ ; check to ensure the correct line is found
 						append formatter copy line
@@ -254,6 +260,12 @@ add-function: function[text /extern add-check][
 						append formatter-for-text copy line
 						replace/all formatter-for-text "(" ""
 						replace/all formatter-for-text ")" ""
+<<<<<<< Updated upstream
+=======
+						replace/all formatter-for-text "[" ""
+						replace/all formatter-for-text "]" ""
+						replace/all formatter any[number] "(num)" 
+>>>>>>> Stashed changes
 						break
 					]
 				]
