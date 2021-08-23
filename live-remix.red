@@ -855,7 +855,7 @@ view/tight [
 
 	panel-2: panel 1200x100 158.167.247 [
 		output-area: area 
-			1180x79
+			1180x80
 	]
 
 
