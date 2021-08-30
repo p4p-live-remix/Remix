@@ -97,7 +97,7 @@ write-file: function [/extern memory-list] [
 ;;; code for version manipulation
 
 new-line: 1 ; the 'global' amount of lines in the commands text area
-detection-rate: 5 ; default autosaving rate
+detection-rate: 2 ; default autosaving rate
 save-mode: true ; boolean to consider if autosaving is desired
 
 memory-list: [] ; series of strings to store the commands at different verseions
@@ -789,7 +789,7 @@ view/tight [
 			; below 
 			text "Save Rate"
 			across
-			save-rate: drop-down 120 "5" data ["5" "10" "15" "20" "Never"] on-change [
+			save-rate: drop-down 120 "2" data ["2" "5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
 			]
 			text 70x30 ""
