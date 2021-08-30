@@ -179,14 +179,6 @@ count-enters: function[text /extern new-line /extern detection-rate /extern save
 	return false
 ]
 
-; updates the global line count
-update-global-line: function [
-	/extern new-line [integer!] {global number of lines}
-] [
-	length: (length? split commands/text newline)
-	new-line: length
-]
-
 ; function to modify the save rate
 change-detection-rate: function[/extern detection-rate /extern save-mode][
 	either save-rate/text = "Never" [
@@ -728,9 +720,6 @@ view/tight [
 					last-working: copy commands/text
 					colour-area/color: 25.255.25
 				]
-				update-global-line
-
-
 			]
 
 		auto-code-generation-panel: panel 400x100 247.247.158 [
