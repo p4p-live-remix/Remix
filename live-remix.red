@@ -691,12 +691,11 @@ live-commands-default-text: copy "Interactive auto generated code will appear he
 view/tight [
 	title "Live"
 
-	below
-	panel-1: panel 1200x600 158.167.247 [
+	panel-1: panel 400x900 158.167.247 [
 		below
-		colour-area: panel 400x300 158.247.176 [
+		colour-area: panel 400x370 158.247.176 [
 			commands: area 
-				380x280 
+				370x350 
 				"Type your code here.^/" 
 				font-size 12
 				on-focus [
@@ -739,7 +738,7 @@ view/tight [
 			return
 			name: text 44x30 "Name:" font-size 12
 			new-shape-name: area 150x25 font-size 12
-			button font-size 12 "Save Shape" [
+			button font-size 12 "↑ Save Shape ↑" [
 				; check if the shape is a polygon
 				either (length? points-clicked-on) > 2 [
 					; check if a name is provided
@@ -763,7 +762,7 @@ view/tight [
 		]
 		
 		live-commands: area
-			400x250
+			400x380
 			live-commands-default-text
 			font-size 12
 			on-key-up [
@@ -771,95 +770,97 @@ view/tight [
 					refresh-panels 
 				]
 			]
+	]
 
-		return
-		across
-		paper: base 400x600 on-time [do-draw-animate]
-		on-down [
-			visualize-clicked-points event/offset/x event/offset/y
-		]
-
-		; setting up the graphics panel so that "on standard paper" will not
-		; necessarily need to be called before the attempt to generate any graphics
-		do [setup-paper 255.255.255 400 600]
-		; draw the grid and the center crosshair in the background when the gui is 
-		; first created
-		do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
-
+	panel-3: panel 800x900 158.167.247 [
 		below
-		version-area: panel 360x200 247.158.158 [
-			; below 
-			text "Save Rate" font-size 12
+		panel-4: panel 800x600 158.167.247 [
 			across
-			save-rate: drop-down 120 "5" font-size 12 data ["5" "10" "15" "20" "Never"] on-change [
-				change-detection-rate
-			]	
-
-			return
-			text "Version Selected" font-size 12
-			across
-			version-select: drop-down 120 font-size 12 "None Made" data [] on-change [
-				version-selection
+			paper: base 400x600 on-time [do-draw-animate]
+			on-down [
+				visualize-clicked-points event/offset/x event/offset/y
 			]
-			return
-			new-name: area 120x25 font-size 12
-			rename-name: button 120 font-size 12 "Name Version" [
-				save-text commands/text
-				append version-select/data (copy new-name/text)
-			]
-			return
-			previous-v: button 120 font-size 12 "(Previous)" [version-change "-"]
-			next-v: button 120 font-size 12 "(Next)" [version-change "+"]
-			return
-			latest: button 120 font-size 12 "Latest Version" [latest-version]
 
-			; write: button 120 "Write to File" [write-file]
-		]
+			; setting up the graphics panel so that "on standard paper" will not
+			; necessarily need to be called before the attempt to generate any graphics
+			do [setup-paper 255.255.255 400 600]
+			; draw the grid and the center crosshair in the background when the gui is 
+			; first created
+			do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
 
-		text "============================================="
+			below
+			version-area: panel 360x200 247.158.158 [
+				; below 
+				text "Save Rate" font-size 12
+				across
+				save-rate: drop-down 120 "5" font-size 12 data ["5" "10" "15" "20" "Never"] on-change [
+					change-detection-rate
+				]	
 
-		live-points-area: panel 360x343 158.247.176 [
-			text "Select the shape interaction method" font-size 12
-			return
-			shape-interaction-panel: panel 340x100 247.158.158 [
-				radio "draw-shape" font-size 12 on-down [
-					shape-interaction-method: "draw"
-					shapes-dropdown/enabled?: false
-					close-shape/enabled?: true
-					circle-shape/enabled?: true
-					] data [true]
-				radio "replicate-shape" font-size 12 on-down [
-					shape-interaction-method: "replicate" 
-					shapes-dropdown/enabled?: true
-					close-shape/enabled?: false
-					circle-shape/enabled?: false
-				] 
 				return
-				shapes-dropdown: drop-down 120 font-size 11 "Choose shape" data [] disabled on-down [update-polygons-in-code]
+				text "Version Selected" font-size 12
+				across
+				version-select: drop-down 120 font-size 12 "None Made" data [] on-change [
+					version-selection
+				]
+				return
+				new-name: area 120x25 font-size 12
+				rename-name: button 120 font-size 12 "Name Version" [
+					save-text commands/text
+					append version-select/data (copy new-name/text)
+				]
+				return
+				previous-v: button 120 font-size 12 "(Previous)" [version-change "-"]
+				next-v: button 120 font-size 12 "(Next)" [version-change "+"]
+				return
+				latest: button 120 font-size 12 "Latest Version" [latest-version]
+
+				; write: button 120 "Write to File" [write-file]
 			]
-			return
-			text "Select the shape drawing method" font-size 12
-			return
-			close-shape: radio "closed-shape" font-size 12 on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
-			circle-shape: radio "circle" font-size 12 on-down [shape-drawing-method: "circle" clear points-clicked-on]
-			return 
-			button "Clear temporary code area" font-size 12 [clear-temp-code-area]
-			return
-			button "Clear permanent code area" font-size 12 [clear-permanent-code-area]
-			return
-			text "Grid Size" font-size 12
-			across
-			grid-size: drop-down 120 font-size 11 "25" data ["10" "25" "50" "None"] on-change [
-				change-grid-size
+
+			text "============================================="
+
+			live-points-area: panel 360x343 158.247.176 [
+				text "Select the shape interaction method" font-size 12
+				return
+				shape-interaction-panel: panel 340x100 247.158.158 [
+					radio "draw-shape" font-size 12 on-down [
+						shape-interaction-method: "draw"
+						shapes-dropdown/enabled?: false
+						close-shape/enabled?: true
+						circle-shape/enabled?: true
+						] data [true]
+					radio "replicate-shape" font-size 12 on-down [
+						shape-interaction-method: "replicate" 
+						shapes-dropdown/enabled?: true
+						close-shape/enabled?: false
+						circle-shape/enabled?: false
+					] 
+					return
+					shapes-dropdown: drop-down 120 font-size 11 "Choose shape" data [] disabled on-down [update-polygons-in-code]
+				]
+				return
+				text "Select the shape drawing method" font-size 12
+				return
+				close-shape: radio "closed-shape" font-size 12 on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
+				circle-shape: radio "circle" font-size 12 on-down [shape-drawing-method: "circle" clear points-clicked-on]
+				return 
+				button "Clear temporary code area" font-size 12 [clear-temp-code-area]
+				return
+				button "Clear permanent code area" font-size 12 [clear-permanent-code-area]
+				return
+				text "Grid Size" font-size 12
+				across
+				grid-size: drop-down 120 font-size 11 "25" data ["10" "25" "50" "None"] on-change [
+					change-grid-size
+				]
 			]
 		]
+		
+		panel-2: panel 800x300 158.167.247 [
+			output-area: area 
+				770x260
+				font-size 12
+		]
 	]
-
-	panel-2: panel 1200x300 158.167.247 [
-		output-area: area 
-			1180x280
-			font-size 12
-	]
-
-
 ]
