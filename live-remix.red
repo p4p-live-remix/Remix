@@ -696,7 +696,8 @@ view/tight [
 		below
 		commands: area 
 			400x300 
-			"Type your code here.^/"
+			"Type your code here.^/" 
+			font-size 12
 			on-focus [
 				if (commands/text = commands-default-text) [
 					commands/text: copy ""
@@ -733,12 +734,12 @@ view/tight [
 
 			]
 
-		auto-code-generation-panel: panel 400x100 247.247.158 [
-			text 400x30 "AUTO-GENERATED CODE BELOW (Write your code above this only)"
+		auto-code-generation-panel: panel 400x110 247.247.158 [
+			text 400x50 font-size 12 "AUTO-GENERATED CODE BELOW^/(Write your code above this only)" 
 			return
-			name: text 30x20 "Name:"
-			new-shape-name: area 120x20
-			button "Use auto-generated code" [
+			name: text 44x30 "Name:" font-size 12
+			new-shape-name: area 150x25 font-size 12
+			button font-size 12 "Save Shape" [
 				; check if the shape is a polygon
 				either (length? points-clicked-on) > 2 [
 					; check if a name is provided
@@ -764,6 +765,7 @@ view/tight [
 		live-commands: area
 			400x250
 			live-commands-default-text
+			font-size 12
 			on-key-up [
 				attempt [
 					refresh-panels 
@@ -787,31 +789,31 @@ view/tight [
 		below
 		version-area: panel 360x220 247.158.158 [
 			; below 
-			text "Save Rate"
+			text "Save Rate" font-size 12
 			across
-			save-rate: drop-down 120 "5" data ["5" "10" "15" "20" "Never"] on-change [
+			save-rate: drop-down 120 "5" font-size 12 data ["5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
 			]
 			text 70x30 ""
 			colour-area: panel 50x50 25.255.25
 
 			return
-			text "Version Selected"
+			text "Version Selected" font-size 12
 			across
-			version-select: drop-down 120 "None Made" data [] on-change [
+			version-select: drop-down 120 font-size 12 "None Made" data [] on-change [
 				version-selection
 			]
 			return
-			new-name: area 120x20
-			rename-name: button 120 "Name Version" [
+			new-name: area 120x25 font-size 12
+			rename-name: button 120 font-size 12 "Name Version" [
 				save-text commands/text
 				append version-select/data (copy new-name/text)
 			]
 			return
-			next-v: button 120 "(Next)" [version-change "+"]
-			previous-v: button 120 "(Previous)" [version-change "-"]
+			previous-v: button 120 font-size 12 "(Previous)" [version-change "-"]
+			next-v: button 120 font-size 12 "(Next)" [version-change "+"]
 			return
-			latest: button 120 "Latest" [latest-version]
+			latest: button 120 font-size 12 "Latest Version" [latest-version]
 
 			; write: button 120 "Write to File" [write-file]
 		]
@@ -819,44 +821,45 @@ view/tight [
 		text "============================================="
 
 		live-points-area: panel 360x300 158.247.176 [
-			text "Select the shape interaction method"
+			text "Select the shape interaction method" font-size 12
 			return
 			shape-interaction-panel: panel 340x100 247.158.158 [
-				radio "draw-shape" on-down [
+				radio "draw-shape" font-size 12 on-down [
 					shape-interaction-method: "draw"
 					shapes-dropdown/enabled?: false
 					close-shape/enabled?: true
 					circle-shape/enabled?: true
 					] data [true]
-				radio "replicate-shape" on-down [
+				radio "replicate-shape" font-size 12 on-down [
 					shape-interaction-method: "replicate" 
 					shapes-dropdown/enabled?: true
 					close-shape/enabled?: false
 					circle-shape/enabled?: false
 				] 
 				return
-				shapes-dropdown: drop-down 120 "Choose shape" data [] disabled on-down [update-polygons-in-code]
+				shapes-dropdown: drop-down 120 font-size 11 "Choose shape" data [] disabled on-down [update-polygons-in-code]
 			]
 			return
-			text "Select the shape drawing method"
+			text "Select the shape drawing method" font-size 12
 			return
-			close-shape: radio "closed-shape" on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
-			circle-shape: radio "circle" on-down [shape-drawing-method: "circle" clear points-clicked-on]
+			close-shape: radio "closed-shape" font-size 12 on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
+			circle-shape: radio "circle" font-size 12 on-down [shape-drawing-method: "circle" clear points-clicked-on]
 			return 
-			button "Clear temporary code area" [clear-temp-code-area]
-			button "Clear permanent code area" [clear-permanent-code-area]
+			button "Clear temporary code area" font-size 12 [clear-temp-code-area]
 			return
-			text "Grid Size"
+			button "Clear permanent code area" font-size 12 [clear-permanent-code-area]
+			return
+			text "Grid Size" font-size 12
 			across
-			grid-size: drop-down 120 "25" data ["10" "25" "50" "None"] on-change [
+			grid-size: drop-down 120 font-size 11 "25" data ["10" "25" "50" "None"] on-change [
 				change-grid-size
 			]
 		]
 	]
 
-	panel-2: panel 1200x100 158.167.247 [
+	panel-2: panel 1200x300 158.167.247 [
 		output-area: area 
-			1180x80
+			1180x280
 	]
 
 
