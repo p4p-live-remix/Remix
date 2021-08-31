@@ -787,7 +787,7 @@ view/tight [
 		do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
 
 		below
-		version-area: panel 360x220 247.158.158 [
+		version-area: panel 360x200 247.158.158 [
 			; below 
 			text "Save Rate" font-size 12
 			across
@@ -818,7 +818,7 @@ view/tight [
 
 		text "============================================="
 
-		live-points-area: panel 360x300 158.247.176 [
+		live-points-area: panel 360x343 158.247.176 [
 			text "Select the shape interaction method" font-size 12
 			return
 			shape-interaction-panel: panel 340x100 247.158.158 [
