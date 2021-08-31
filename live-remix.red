@@ -694,45 +694,45 @@ view/tight [
 	below
 	panel-1: panel 1200x600 158.167.247 [
 		below
-		commands: area 
-			400x300 
-			"Type your code here.^/" 
-			font-size 12
-			on-focus [
-				if (commands/text = commands-default-text) [
-					commands/text: copy ""
-				]
-			]
-			on-unfocus [
-				if (commands/text = "") [
-					commands/text: copy commands-default-text
-				]
-			]
-			on-key-up [
-				either error? result: try [refresh-panels] [
-					try [
-						run-remix ( rejoin [last-working "^/^/" live-commands/text] )
-						colour-area/color: 255.0.0
+		colour-area: panel 400x300 158.247.176 [
+			commands: area 
+				380x280 
+				"Type your code here.^/" 
+				font-size 12
+				on-focus [
+					if (commands/text = commands-default-text) [
+						commands/text: copy ""
 					]
-				] [
-					; check if there is sufficient amount of lines added/removed
-					if count-enters commands/text [
-						; check if the code is 'unique'
-						if unique-and-filled commands/text [
-							; save the text and appending it as an option for user selection
-							attempt [
-								save-text commands/text
-								append version-select/data (to-string (length? memory-list))
+				]
+				on-unfocus [
+					if (commands/text = "") [
+						commands/text: copy commands-default-text
+					]
+				]
+				on-key-up [
+					either error? result: try [refresh-panels] [
+						try [
+							run-remix ( rejoin [last-working "^/^/" live-commands/text] )
+							colour-area/color: 247.158.158
+						]
+					] [
+						; check if there is sufficient amount of lines added/removed
+						if count-enters commands/text [
+							; check if the code is 'unique'
+							if unique-and-filled commands/text [
+								; save the text and appending it as an option for user selection
+								attempt [
+									save-text commands/text
+									append version-select/data (to-string (length? memory-list))
+								]
 							]
 						]
+						last-working: copy commands/text
+						colour-area/color: 158.247.176
 					]
-					last-working: copy commands/text
-					colour-area/color: 25.255.25
+					update-global-line
 				]
-				update-global-line
-
-
-			]
+		]
 
 		auto-code-generation-panel: panel 400x110 247.247.158 [
 			text 400x50 font-size 12 "AUTO-GENERATED CODE BELOW^/(Write your code above this only)" 
@@ -793,9 +793,7 @@ view/tight [
 			across
 			save-rate: drop-down 120 "5" font-size 12 data ["5" "10" "15" "20" "Never"] on-change [
 				change-detection-rate
-			]
-			text 70x30 ""
-			colour-area: panel 50x50 25.255.25
+			]	
 
 			return
 			text "Version Selected" font-size 12
@@ -860,6 +858,7 @@ view/tight [
 	panel-2: panel 1200x300 158.167.247 [
 		output-area: area 
 			1180x280
+			font-size 12
 	]
 
 
