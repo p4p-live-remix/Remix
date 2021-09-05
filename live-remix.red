@@ -97,7 +97,7 @@ write-file: function [/extern memory-list] [
 ;;; code for version manipulation
 
 new-line: 1 ; the 'global' amount of lines in the commands text area
-detection-rate: 5 ; default autosaving rate
+detection-rate: 2 ; default autosaving rate
 save-mode: true ; boolean to consider if autosaving is desired
 
 memory-list: [] ; series of strings to store the commands at different verseions
@@ -177,14 +177,6 @@ count-enters: function[text /extern new-line /extern detection-rate /extern save
 		]
 	]
 	return false
-]
-
-; updates the global line count
-update-global-line: function [
-	/extern new-line [integer!] {global number of lines}
-] [
-	length: (length? split commands/text newline)
-	new-line: length
 ]
 
 ; function to modify the save rate
@@ -785,6 +777,7 @@ view/tight [
 			paper: base 400x600 on-time [do-draw-animate]
 			on-down [
 				visualize-clicked-points event/offset/x event/offset/y
+
 			]
 
 			; setting up the graphics panel so that "on standard paper" will not
