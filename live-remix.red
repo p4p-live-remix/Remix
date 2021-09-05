@@ -99,6 +99,7 @@ write-file: function [/extern memory-list] [
 new-line: 1 ; the 'global' amount of lines in the commands text area
 detection-rate: 2 ; default autosaving rate
 save-mode: true ; boolean to consider if autosaving is desired
+global: 1
 
 memory-list: [] ; series of strings to store the commands at different verseions
 
@@ -206,9 +207,13 @@ update-line-count: function[
 
 command-lines: 1
 ; returns if last keystroke is enter
-enter-key-pressed: function[text /extern new-line][
+enter-key-pressed: function[text /extern new-line /extern global][
+	
 	length: (length? split text newline)
-	if (length <> new-line)[
+	print length
+	print global
+	
+	if (length <> global)[
 		new-line: length ; update new length
 		return true
 	]
@@ -472,6 +477,14 @@ refresh-panels: func [
 		]
 		; run the code
 		run-remix (rejoin [commands/text "^/" live-commands/text "^/"]) 
+]
+
+update-global-line: function [
+	{ updates the current number of lines}
+	/extern global
+] [
+	print "ENTER"
+	global: length? ( split commands/text newline)
 ]
 
 ; corresponds to the radio buttons under "Select the shape drawing method"
