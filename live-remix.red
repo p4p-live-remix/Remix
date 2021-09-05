@@ -691,8 +691,9 @@ live-commands-default-text: copy "Interactive auto generated code will appear he
 view/tight [
 	title "Live"
 
-	panel-1: panel 400x900 158.167.247 [
+	panel-1: panel 400x980 158.167.247 [
 		below
+		text "  Coding Area" bold font-size 14
 		colour-area: panel 400x370 158.247.176 [
 			commands: area 
 				370x350 
@@ -761,6 +762,8 @@ view/tight [
 			]
 		]
 		
+		text "  Sandbox Area" bold font-size 14
+
 		live-commands: area
 			400x380
 			live-commands-default-text
@@ -772,8 +775,11 @@ view/tight [
 			]
 	]
 
-	panel-3: panel 800x900 158.167.247 [
+	panel-3: panel 800x980 158.167.247 [
 		below
+
+		text "  Drawing Area" bold font-size 14
+
 		panel-4: panel 800x600 158.167.247 [
 			across
 			paper: base 400x600 on-time [do-draw-animate]
@@ -845,9 +851,9 @@ view/tight [
 				close-shape: radio "closed-shape" font-size 12 on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
 				circle-shape: radio "circle" font-size 12 on-down [shape-drawing-method: "circle" clear points-clicked-on]
 				return 
-				button "Clear temporary code area" font-size 12 [clear-temp-code-area]
+				button "Clear coding area" font-size 12 [clear-permanent-code-area]
 				return
-				button "Clear permanent code area" font-size 12 [clear-permanent-code-area]
+				button "Clear sandbox area" font-size 12 [clear-temp-code-area]
 				return
 				text "Grid Size" font-size 12
 				across
@@ -857,6 +863,8 @@ view/tight [
 			]
 		]
 		
+		text "  Terminal Output" bold font-size 14
+
 		panel-2: panel 800x300 158.167.247 [
 			output-area: area 
 				770x260
