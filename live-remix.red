@@ -711,8 +711,10 @@ view/tight [
 	title "Live"
 
 	panel-1: panel 400x980 158.167.247 [
+		text 230x30 "  Coding Area" bold font-size 14
+		button "Clear coding area" font-size 12 [clear-permanent-code-area]
+		return
 		below
-		text "  Coding Area" bold font-size 14
 		colour-area: panel 400x370 158.247.176 [
 			commands: area 
 				370x350 
@@ -761,11 +763,11 @@ view/tight [
 		]
 
 		auto-code-generation-panel: panel 400x110 247.247.158 [
-			text 400x50 font-size 12 "AUTO-GENERATED CODE BELOW^/(Write your code above this only)" 
+			text 400x50 font-size 12 "Give the shape below a name. Clicking the button will^/transfer it to the coding area above." 
 			return
 			name: text 44x30 "Name:" font-size 12
 			new-shape-name: area 150x25 font-size 12
-			button font-size 12 "↑ Save Shape ↑" [
+			button font-size 12 "↑ Finish Shape ↑" [
 				; check if the shape is a polygon
 				either (length? points-clicked-on) > 2 [
 					; check if a name is provided
@@ -787,9 +789,13 @@ view/tight [
 				]
 			]
 		]
-		
-		text "  Sandbox Area" bold font-size 14
 
+		across
+		text 220x30 "  Sandbox Area" bold font-size 14
+		button "Clear sandbox area" font-size 12 [clear-temp-code-area]
+		return
+
+		below
 		live-commands: area
 			400x380
 			live-commands-default-text
@@ -802,10 +808,12 @@ view/tight [
 	]
 
 	panel-3: panel 800x980 158.167.247 [
+		across
+		text 240x30 "  Drawing Area" bold font-size 14
+		button "Clear drawing area" font-size 12 [clear-temp-code-area]
+		return
+
 		below
-
-		text "  Drawing Area" bold font-size 14
-
 		panel-4: panel 800x600 158.167.247 [
 			across
 			paper: base 400x600 on-time [do-draw-animate]
@@ -823,9 +831,10 @@ view/tight [
 
 			below
 			version-area: panel 360x200 247.158.158 [
-				; below 
-				text "Save Rate" font-size 12
+				below 
+				text bold underline "Versioning Tool" font-size 12
 				across
+				text "Save Rate" font-size 12
 				save-rate: drop-down 120 "5" font-size 12 data ["5" "10" "15" "20" "Never"] on-change [
 					change-detection-rate
 				]	
@@ -837,23 +846,23 @@ view/tight [
 					version-selection
 				]
 				return
-				new-name: area 120x25 font-size 12
-				rename-name: button 120 font-size 12 "Name Version" [
+				text 50x20 "Name: " font-size 12
+				new-name: area 120x25 font-size 12 
+				rename-name: button 120 font-size 12 "Save Version" [
 					save-text commands/text
 					append version-select/data (copy new-name/text)
 				]
 				return
-				previous-v: button 120 font-size 12 "(Previous)" [version-change "-"]
-				next-v: button 120 font-size 12 "(Next)" [version-change "+"]
-				return
+				previous-v: button 90 font-size 12 "Previous" [version-change "-"]
+				next-v: button 90 font-size 12 "Next" [version-change "+"]
 				latest: button 120 font-size 12 "Latest Version" [latest-version]
 
 				; write: button 120 "Write to File" [write-file]
 			]
 
-			text "============================================="
-
-			live-points-area: panel 360x343 158.247.176 [
+			live-points-area: panel 360x380 158.247.176 [
+				text bold underline "Drawing settings" font-size 12
+				return
 				text "Select the shape interaction method" font-size 12
 				return
 				shape-interaction-panel: panel 340x100 247.158.158 [
@@ -878,11 +887,9 @@ view/tight [
 				close-shape: radio "closed-shape" font-size 12 on-down [shape-drawing-method: "closed-shape" clear points-clicked-on] data [true]
 				circle-shape: radio "circle" font-size 12 on-down [shape-drawing-method: "circle" clear points-clicked-on]
 				return 
-				button "Clear coding area" font-size 12 [clear-permanent-code-area]
+				text bold underline "Grid settings" font-size 12
 				return
-				button "Clear sandbox area" font-size 12 [clear-temp-code-area]
-				return
-				text "Grid Size" font-size 12
+				text 100x30 "Grid Size" font-size 12
 				across
 				grid-size: drop-down 120 font-size 11 "25" data ["10" "25" "50" "None"] on-change [
 					change-grid-size
