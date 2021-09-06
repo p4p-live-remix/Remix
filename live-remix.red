@@ -210,8 +210,6 @@ command-lines: 1
 enter-key-pressed: function[text /extern new-line /extern global][
 	
 	length: (length? split text newline)
-	print length
-	print global
 	
 	if (length <> global)[
 		new-line: length ; update new length
@@ -479,11 +477,27 @@ refresh-panels: func [
 		run-remix (rejoin [commands/text "^/" live-commands/text "^/"]) 
 ]
 
+tab-correct: function [
+	{ make sure the tabbing for the code is correct}
+][
+	lines: copy ( split commands/text newline)
+	count: 0
+	foreach line lines [
+		new-count: length? ( split line tab  )
+		either ( greater? new-count ( count + 1 ) )[
+				return false
+		][
+			count: new-count
+		]
+	]
+	return true
+]
+
+
 update-global-line: function [
 	{ updates the current number of lines}
 	/extern global
 ] [
-	print "ENTER"
 	global: length? ( split commands/text newline)
 ]
 
@@ -715,25 +729,32 @@ view/tight [
 					]
 				]
 				on-key-up [
-					either error? result: try [refresh-panels] [
+					either (tab-correct) [
+						either error? result: try [refresh-panels] [
+							try [
+								run-remix ( rejoin [last-working "^/^/" live-commands/text] )
+								colour-area/color: 247.158.158
+							]
+						] [
+							; check if there is sufficient amount of lines added/removed
+							if count-enters commands/text [
+								; check if the code is 'unique'
+								if unique-and-filled commands/text [
+									; save the text and appending it as an option for user selection
+									attempt [
+										save-text commands/text
+										append version-select/data (to-string (length? memory-list))
+									]
+								]
+							]
+							last-working: copy commands/text
+							colour-area/color: 158.247.176
+						]
+					][
 						try [
 							run-remix ( rejoin [last-working "^/^/" live-commands/text] )
 							colour-area/color: 247.158.158
 						]
-					] [
-						; check if there is sufficient amount of lines added/removed
-						if count-enters commands/text [
-							; check if the code is 'unique'
-							if unique-and-filled commands/text [
-								; save the text and appending it as an option for user selection
-								attempt [
-									save-text commands/text
-									append version-select/data (to-string (length? memory-list))
-								]
-							]
-						]
-						last-working: copy commands/text
-						colour-area/color: 158.247.176
 					]
 					update-global-line
 				]
