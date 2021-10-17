@@ -21,14 +21,26 @@ call-back: function [
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
 ; CONSTANTS
-grid-snap: 25
-grid-snap-active: true
-last-working: copy ""
 ; remix code that generates a cross in the centre of the graphical area
 centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
+
 ; remix code for changing between layers 0 and 1
 to-layer-zero: "^/draw on layer 0"
 to-layer-one: "^/draw on layer 1"
+
+; constants for the versioning tool
+new-line: 1 ; the 'global' amount of lines in the commands text area
+detection-rate: 2 ; default autosaving rate
+save-mode: true ; boolean to consider if autosaving is desired
+global: 1
+memory-list: [] ; series of strings to store the commands at different versions
+
+; grid-related constants
+grid-snap: 25
+grid-snap-active: true
+
+; error state handling related constants
+last-working: copy ""
 
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
@@ -88,12 +100,7 @@ run-remix: function [
 
 ;;; code for version manipulation
 
-new-line: 1 ; the 'global' amount of lines in the commands text area
-detection-rate: 2 ; default autosaving rate
-save-mode: true ; boolean to consider if autosaving is desired
-global: 1
 
-memory-list: [] ; series of strings to store the commands at different verseions
 
 ; saving a current version into the list
 save-text: function [text][
