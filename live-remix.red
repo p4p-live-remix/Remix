@@ -55,7 +55,9 @@ prin: function [
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
 ; CUSTOM FUNCTIONS FOR LIVE-REMIX
+;;; functions related to grid
 grid-generater-code: function [
+	{ generate the grid in drawing area }
 	/extern grid-snap [integer!]  {Snap change wanted}
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
 ] [
@@ -66,6 +68,7 @@ grid-generater-code: function [
 	return ""	
 ]
 
+;;; functions related to running remix code
 run-remix: function [
 	{ Execute the remix code in "code". 
 	  Put the output in the output area. }
@@ -98,10 +101,7 @@ run-remix: function [
 	do red-code
 ]
 
-;;; code for version manipulation
-
-
-
+;;; functions related to the versioning tool
 ; saving a current version into the list
 save-text: function [text][
 	append memory-list (copy text)
@@ -192,8 +192,7 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 	
 ]
 
-;;; functions to detect enter keystroke
-
+;;; functions related to detecting enter keystroke
 ; function which updates the line count, if for some reason it did not happen when a verseion changes
 update-line-count: function[
 	/extern command-lines [integer!] { the number of lines  used for version control}
