@@ -21,29 +21,43 @@ call-back: function [
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
 ; CONSTANTS
+;;; remix code related constants
 ; remix code that generates a cross in the centre of the graphical area
 centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
-
 ; remix code for changing between layers 0 and 1
 to-layer-zero: "^/draw on layer 0"
 to-layer-one: "^/draw on layer 1"
+; read in remix code files
+stdlib: read %standard-lib.rem ; loading the standard library
+precursor-statements: read %precusor-graphics-statements.rem ; loading the graphics statements which should be executed everytime
 
-; constants for the versioning tool
+;;; constants for the versioning tool
 new-line: 1 ; the 'global' amount of lines in the commands text area
 detection-rate: 2 ; default autosaving rate
 save-mode: true ; boolean to consider if autosaving is desired
 global: 1
-memory-list: [] ; series of strings to store the commands at different versions
 
-; grid-related constants
+;;; grid-related constants
 grid-snap: 25
 grid-snap-active: true
 
-; error state handling related constants
+;;; error state handling related constants
 last-working: copy ""
 
-; constants related to detecting enter keystroke
+;;; constants related to detecting enter keystroke
 command-lines: 1
+
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; GLOBAL VARIABLES
+;;; variables for the versioning tool
+memory-list: [] ; series of strings to store the commands at different versions
+
+;;; variables for graphics area (Drawing Area)
+; Block containing (it 'remembers') the points clicked on in graphics area
+; Each element inside is a representation of a coordinate
+; like: {0, 0}
+points-clicked-on: make block! 0
 
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
@@ -225,6 +239,36 @@ draw-circle: function [
         append/only draw-command-layers/:draw-layer circle-command
     ]
     none
+]
+
+; Setting up the graphics area by overriding the associated func
+setup-paper: func [
+    { Overridden version - Prepare the paper and drawing instructions.
+      At the moment I am using a 2x resolution background for the paper. }
+    colour [tuple!]
+    width [integer!]
+    height [integer!]
+][
+    paper-size: as-pair width height
+    background-template: reduce [paper-size * 2 colour]
+    background: make image! background-template
+		paper/color: colour
+		do [
+				all-layers/1: compose [image background 0x0 (paper-size)]
+				paper/draw: all-layers
+				paper/rate: none
+		]
+    none
+]
+
+; Allowing functions to be redefined temporarily so that re-execution of code
+; does not create trouble
+insert-function: function [
+    { Overridden version - Insert a function into the function map table }
+    func-object [object!]   {the function object}
+][
+    name: to-function-name func-object/template
+    put function-map name func-object
 ]
 
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
@@ -420,46 +464,11 @@ enter-key-pressed: function[text /extern new-line /extern global][
 
 
 ; run (load into Red runtime) the standard remix library
-stdlib: read %standard-lib.rem
 run-remix/running-first-time stdlib
 
-; Setting up the graphics area by overriding the associated func
-setup-paper: func [
-    { Overridden version - Prepare the paper and drawing instructions.
-      At the moment I am using a 2x resolution background for the paper. }
-    colour [tuple!]
-    width [integer!]
-    height [integer!]
-][
-    paper-size: as-pair width height
-    background-template: reduce [paper-size * 2 colour]
-    background: make image! background-template
-		paper/color: colour
-		do [
-				all-layers/1: compose [image background 0x0 (paper-size)]
-				paper/draw: all-layers
-				paper/rate: none
-		]
-    none
-]
 
-; Allowing functions to be redefined temporarily so that re-execution of code
-; does not create trouble
-insert-function: function [
-    { Overridden version - Insert a function into the function map table }
-    func-object [object!]   {the function object}
-][
-    name: to-function-name func-object/template
-    put function-map name func-object
-]
 
-; loading the graphics statements which should be executed everytime
-precursor-statements: read %precusor-graphics-statements.rem
 
-; Block containing (it 'remembers') the points clicked on in graphics area
-; Each element inside is a representation of a coordinate
-; like: {0, 0}
-points-clicked-on: make block! 0
 
 
 refresh-panels: func [
