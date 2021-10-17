@@ -43,6 +43,7 @@ grid-snap-active: true
 
 ;;; error state handling related constants
 last-working: copy ""
+add-check: false ; to make sure the function is only made once
 
 ;;; constants related to Coding and Sandbox Areas
 command-lines: 1 ; for detecting enter keystroke
@@ -78,74 +79,8 @@ prin: function [
 	append output-area/text output
 ]
 
-; overriding a function from transpiler.red
-add-check: false ; variable to only append once
-add-function: function[text /extern add-check][
-	either add-check [
-		add-check: false
-	] [
-		add-check: true
-
-		formatter: copy "^/^/; recently generated function^/"
-		formatter-for-text: copy rejoin ["" tab "showline " dbl-quote]
-
-		; if the function has parameters
-		either ((find text "|") <> none )[
-			lines: split commands/text newline
-			; find the line which contains the new function
-			number: charset "0123456789"
-			foreach line lines [
-				if (  ((find line "(") <> none) or ((find line "[") <> none) or ((find line number) <> none )    )[
-					character: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ": "]
-					test: copy line
-					replace/all test ["(" any[character] ")"] "|" ; replace the parameter aspect
-					replace/all test ["[" any[character] "]"] "|" ; replace the parameter aspect
-					replace/all test [[number]] "|" ; replace the parameter aspect
-					replace/all test " " "_"
-					replace/all test "^-" ""
-					if (test == text)[ ; check to ensure the correct line is found
-						append formatter copy line
-						append formatter ":^/"
-						append formatter-for-text copy line
-						replace/all formatter "^-" ""
-						replace/all formatter-for-text "(" ""
-						replace/all formatter-for-text ")" ""
-						replace/all formatter-for-text "[" ""
-						replace/all formatter-for-text "]" ""
-						replace/all formatter [[number]] "(num)" 
-						break
-					]
-				]
-			]
-		] [
-			append formatter copy text
-			append formatter ":^/"
-			append formatter-for-text copy text
-		]
-
-		; replace previous comment
-		replace/all commands/text "^/; recently generated function" ""
-		replace/all formatter "_" " "
-
-		; append formatter-for-text " made"
-		append formatter-for-text dbl-quote
-		replace/all formatter-for-text "_" " "
-
-		; todo add a check to see if it has made some change
-		if (formatter-for-text = (rejoin [tab "showline " dbl-quote dbl-quote]))[
-			return
-		]
-		; append formatter-for-text tab
-		; append formatter-for-text "showline "
-		; append formatter-for-text dbl-quote
-
-		; append function declaration to command area
-		append commands/text formatter
-		append commands/text formatter-for-text
-	]
-]
-
-; overriding function to generate function
+; overriding function response to an undeclared function
+; this function is overwritting a function from transpiler.red
 create-red-function-call: function [
 	{ Return the red equivalent of a function call. }
 	remix-call "Includes the name and parameter list"
@@ -156,8 +91,7 @@ create-red-function-call: function [
 		either (the-fnc: pluralised remix-call/fnc-name) [
 			print ["Careful:" remix-call/fnc-name "renamed." ]
 		][
-			; print ["Error:" remix-call/fnc-name "not declared."]
-			; function: copy remix-call/fnc-name
+			; overwritten section to handle the creation of a new function
 			if (enter-key-pressed commands/text) [ ; check if enter keystroke was pressed
 				add-function remix-call/fnc-name
 			]
@@ -207,6 +141,7 @@ create-red-function-call: function [
 	]
 ]
 
+; this function is overwritting a function from built-in-functions.red
 draw-line: function [
     { Overridden version - Draw a line from start to finish. }
     start [hash! map!] "with x and y"
@@ -230,6 +165,7 @@ draw-line: function [
     none
 ]
 
+; this function is overwritting a function from built-in-functions.red
 draw-circle: function [
     { Overridden version - Draw a circle. }
     radius [number!]
@@ -250,7 +186,8 @@ draw-circle: function [
     none
 ]
 
-; Setting up the graphics area by overriding the associated func
+; Setting up the graphics area by overriding the associated function
+; this function is overwritting a function from built-in-functions.red
 setup-paper: func [
     { Overridden version - Prepare the paper and drawing instructions.
       At the moment I am using a 2x resolution background for the paper. }
@@ -272,6 +209,7 @@ setup-paper: func [
 
 ; Allowing functions to be redefined temporarily so that re-execution of code
 ; does not create trouble
+; this function is overwritting a function from built-in-functions.red
 insert-function: function [
     { Overridden version - Insert a function into the function map table }
     func-object [object!]   {the function object}
@@ -284,6 +222,7 @@ insert-function: function [
 
 ; CUSTOM FUNCTIONS
 ;;; functions related to grid
+; code to generate grid on the background
 grid-generater-code: function [
 	{ generate the grid in drawing area }
 	/extern grid-snap [integer!]  {Snap change wanted}
@@ -296,6 +235,7 @@ grid-generater-code: function [
 	return ""	
 ]
 
+; code to change the grid spacing
 change-grid-size: function [
 	{ Change grid snap rating}
 	/extern grid-snap [integer!]  {Snap change wanted}
@@ -375,7 +315,7 @@ version-selection: function [] [
 	]
 ]
 
-; function to display the latest TODO refine the function above with it to make this file less cluttered
+; function to display the latest version TODO refine the function above with it to make this file less cluttered
 latest-version: function [] [
 	either (length? memory-list) = 0 [
 		print "No Versions Made"
@@ -525,17 +465,80 @@ use-autogenerated-code: func [
 	refresh-panels
 ]
 
-; also known as Sandbox Area
+; button handler for clearing the Sandbox Area
 clear-temp-code-area: func [] [
 	live-commands/text: copy ""
 	clear points-clicked-on
 	refresh-panels
 ]
 
-; also known as Coding Area
+; button handler for clearing the Coding Area
 clear-permanent-code-area: func [] [
 	commands/text: copy ""
 	refresh-panels
+]
+
+; function called to generate a function stub
+add-function: function[text /extern add-check][
+	either add-check [
+		add-check: false
+	] [
+		add-check: true
+
+		formatter: copy "^/^/; recently generated function^/"
+		formatter-for-text: copy rejoin ["" tab "showline " dbl-quote]
+
+		; if the function has parameters
+		either ((find text "|") <> none )[
+			lines: split commands/text newline
+			; find the line which contains the new function
+			number: charset "0123456789"
+			foreach line lines [
+				if (  ((find line "(") <> none) or ((find line "[") <> none) or ((find line number) <> none )    )[
+					character: charset [#"A" - #"Z" #"a" - #"z"  "0123456789" ": "]
+					test: copy line
+					replace/all test ["(" any[character] ")"] "|" ; replace the parameter aspect
+					replace/all test ["[" any[character] "]"] "|" ; replace the parameter aspect
+					replace/all test [[number]] "|" ; replace the parameter aspect
+					replace/all test " " "_"
+					replace/all test "^-" ""
+					if (test == text)[ ; check to ensure the correct line is found
+						append formatter copy line
+						append formatter ":^/"
+						append formatter-for-text copy line
+						replace/all formatter "^-" ""
+						replace/all formatter-for-text "(" ""
+						replace/all formatter-for-text ")" ""
+						replace/all formatter-for-text "[" ""
+						replace/all formatter-for-text "]" ""
+						replace/all formatter [[number]] "(num)" 
+						break
+					]
+				]
+			]
+		] [
+			append formatter copy text
+			append formatter ":^/"
+			append formatter-for-text copy text
+		]
+
+		; replace previous comment
+		replace/all commands/text "^/; recently generated function" ""
+		replace/all formatter "_" " "
+
+		; append formatter-for-text " made"
+		append formatter-for-text dbl-quote
+		replace/all formatter-for-text "_" " "
+
+		; todo add a check to see if it has made some change
+		if (formatter-for-text = (rejoin [tab "showline " dbl-quote dbl-quote]))[
+			return
+		]
+
+		; add stub to code area
+		append commands/text formatter
+		append commands/text formatter-for-text
+	]
 ]
 
 ; ************************************************************************************************************
