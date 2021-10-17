@@ -1,9 +1,8 @@
 Red [needs: view]
 
+; unmodified code
 do %remix-grammar-AST.red
 do %transpiler.red
-
-last-working: copy ""
 
 call-back: function [
 	event [word!] 
@@ -19,6 +18,12 @@ call-back: function [
 	true
 ]
 
+; constants
+grid-snap: 25
+grid-snap-active: true
+last-working: copy ""
+
+; overridden functions
 prin: function [
 	{ Replace the standard "prin" function, which used in the built-in show functions. }
 	output [string!]
@@ -26,9 +31,7 @@ prin: function [
 	append output-area/text output
 ]
 
-grid-snap: 25
-grid-snap-active: true
-
+; custom functions for live-remix
 grid-generater-code: function [
 	/extern grid-snap [integer!]  {Snap change wanted}
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
