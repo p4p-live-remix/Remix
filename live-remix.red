@@ -1,6 +1,6 @@
 Red [needs: view]
 
-; UNMODIFIED CODE
+; CODE DIRECTLY COPIED FROM remix.red
 do %remix-grammar-AST.red
 do %transpiler.red
 
@@ -722,6 +722,7 @@ update-polygons-in-code: func [] [
 ; run (load into Red runtime) the standard remix library
 run-remix/running-first-time stdlib
 
+; run the GUI and this is the constantly running program which provides 'liveness'
 view/tight [
 	title "Live"
 
