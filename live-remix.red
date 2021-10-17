@@ -1,9 +1,8 @@
 Red [needs: view]
 
+; CODE DIRECTLY COPIED FROM remix.red
 do %remix-grammar-AST.red
 do %transpiler.red
-
-last-working: copy ""
 
 call-back: function [
 	event [word!] 
@@ -19,6 +18,60 @@ call-back: function [
 	true
 ]
 
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; CONSTANTS
+;;; remix code related constants
+; remix code that generates a cross in the centre of the graphical area
+centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
+; remix code for changing between layers 0 and 1
+to-layer-zero: "^/draw on layer 0"
+to-layer-one: "^/draw on layer 1"
+
+;;; standard library related
+stdlib: read %standard-lib.rem ; loading the standard library
+
+;;; constants for the versioning tool
+new-line: 1 ; the 'global' amount of lines in the commands text area
+detection-rate: 2 ; default autosaving rate
+save-mode: true ; boolean to consider if autosaving is desired
+global: 1
+
+;;; grid-related constants
+grid-snap: 25
+grid-snap-active: true
+
+;;; error state handling related constants
+last-working: copy ""
+add-check: false ; to make sure the function is only made once
+
+;;; constants related to Coding and Sandbox Areas
+command-lines: 1 ; for detecting enter keystroke
+commands-default-text: copy "Type your code here.^/" ; for Coding area
+live-commands-default-text: copy "Interactive auto generated code will appear here.^/" ; for Sandbox area 
+
+;;; constants related to shape-drawing
+; corresponds to the radio buttons under "Select the shape drawing method"
+shape-drawing-method: "closed-shape"
+; corresponds to the radio buttons under "Select the shape drawing method"
+shape-interaction-method: "draw"
+precursor-statements: read %precusor-graphics-statements.rem ; loading the graphics statements which should be executed everytime
+
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; GLOBAL VARIABLES
+;;; variables for the versioning tool
+memory-list: [] ; series of strings to store the commands at different versions
+
+;;; variables for graphics area (Drawing Area)
+; Block containing (it 'remembers') the points clicked on in graphics area
+; Each element inside is a representation of a coordinate
+; like: {0, 0}
+points-clicked-on: make block! 0
+
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; OVERRIDDEN FUNCTIONS
 prin: function [
 	{ Replace the standard "prin" function, which used in the built-in show functions. }
 	output [string!]
@@ -26,10 +79,152 @@ prin: function [
 	append output-area/text output
 ]
 
-grid-snap: 25
-grid-snap-active: true
+; overriding function response to an undeclared function
+; this function is overwritting a function from transpiler.red
+create-red-function-call: function [
+	{ Return the red equivalent of a function call. }
+	remix-call "Includes the name and parameter list"
+][
+	the-fnc: select function-map remix-call/fnc-name
+	if the-fnc = none [
+		; check if the name can be pluralised.
+		either (the-fnc: pluralised remix-call/fnc-name) [
+			print ["Careful:" remix-call/fnc-name "renamed." ]
+		][
+			; overwritten section to handle the creation of a new function
+			if (enter-key-pressed commands/text) [ ; check if enter keystroke was pressed
+				add-function remix-call/fnc-name
+			]
+			return ; changed from quit for live coding
+		]
+	]
+	if all [ ; check if it is a recursive call
+		the-fnc/red-code = none
+		the-fnc/fnc-def = []
+	][ ; at the moment no reference parameters in recursive calls
+		red-stmt: to-word remix-call/fnc-name
+		red-params: create-red-parameters remix-call/actual-params
+		return compose [(red-stmt) (red-params)]
+	]
+	either the-fnc/red-code [ ; an ordinary function call
+		red-stmt: first the-fnc/red-code
+		either (red-stmt = 'get-item) or (red-stmt = 'set-item) [
+			red-params: deal-with-word-key remix-call/actual-params
+		][
+			red-params: create-red-parameters remix-call/actual-params
+		]
+		return compose [(red-stmt) (red-params)]
+	][ ; a reference function call
+		copy-fnc: copy/deep the-fnc/fnc-def
+		formals: the-fnc/formal-parameters
+		actual-parameters: copy []
+		bind-word: none
+		forall formals [
+			formal-param: first formals
+			actual-param: pick remix-call/actual-params (index? formals)
+			either (first formal-param) = #"#" [
+				if actual-param/type <> "variable" [
+					print "Error: The actual parameter for a reference parameter must be a variable."
+					quit
+				]
+				bind-word: to-word actual-param/name ; doesn't matter if more than one
+				replace/all/deep copy-fnc (to-word formal-param) bind-word
+				; there is a potential problem here
+				; an existing variable in the function code could have the same name
+				; as the actual parameter
+			][
+				append actual-parameters actual-param
+			]
+		]
+		red-params: create-red-parameters actual-parameters
+		compose/deep [do reduce [do bind [(copy-fnc)] quote (bind-word) (red-params)]]
+	]
+]
 
+; this function is overwritting a function from built-in-functions.red
+draw-line: function [
+    { Overridden version - Draw a line from start to finish. }
+    start [hash! map!] "with x and y"
+    finish [hash! map!] "with x and y"
+][
+    start: point-to-pair start
+    finish: point-to-pair finish
+		; offsetting the start and finish points to make them relative to the centre
+		; of the graphical area
+    start/1: start/1 + 200
+    start/2: start/2 + 300
+    finish/1: finish/1 + 200
+    finish/2: finish/2 + 300
+    either draw-layer = 0 [
+        line-command: compose [line (start * 2) (finish * 2)]
+        draw background append copy background-pen line-command
+    ][
+        line-command: compose [line (start) (finish)]
+        append/only draw-command-layers/:draw-layer line-command
+    ]
+    none
+]
+
+; this function is overwritting a function from built-in-functions.red
+draw-circle: function [
+    { Overridden version - Draw a circle. }
+    radius [number!]
+    centre [hash! map!] "x, y"
+][
+    centre: point-to-pair centre
+		; offsetting the centre to make them relative to the centre
+		; of the graphical area
+    centre/1: centre/1 + 200
+    centre/2: centre/2 + 300
+    either draw-layer = 0 [
+        circle-command: reduce ['circle centre * 2 radius * 2]
+        draw background append copy background-pen circle-command
+    ][
+        circle-command: reduce ['circle centre radius]
+        append/only draw-command-layers/:draw-layer circle-command
+    ]
+    none
+]
+
+; Setting up the graphics area by overriding the associated function
+; this function is overwritting a function from built-in-functions.red
+setup-paper: func [
+    { Overridden version - Prepare the paper and drawing instructions.
+      At the moment I am using a 2x resolution background for the paper. }
+    colour [tuple!]
+    width [integer!]
+    height [integer!]
+][
+    paper-size: as-pair width height
+    background-template: reduce [paper-size * 2 colour]
+    background: make image! background-template
+		paper/color: colour
+		do [
+				all-layers/1: compose [image background 0x0 (paper-size)]
+				paper/draw: all-layers
+				paper/rate: none
+		]
+    none
+]
+
+; Allowing functions to be redefined temporarily so that re-execution of code
+; does not create trouble
+; this function is overwritting a function from built-in-functions.red
+insert-function: function [
+    { Overridden version - Insert a function into the function map table }
+    func-object [object!]   {the function object}
+][
+    name: to-function-name func-object/template
+    put function-map name func-object
+]
+
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; CUSTOM FUNCTIONS
+;;; functions related to grid
+; code to generate grid on the background
 grid-generater-code: function [
+	{ generate the grid in drawing area }
 	/extern grid-snap [integer!]  {Snap change wanted}
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
 ] [
@@ -40,13 +235,30 @@ grid-generater-code: function [
 	return ""	
 ]
 
-; remix code that generates a cross in the centre of the
-; graphical area
-centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
-; remix code for changing between layers 0 and 1
-to-layer-zero: "^/draw on layer 0"
-to-layer-one: "^/draw on layer 1"
+; code to change the grid spacing
+change-grid-size: function [
+	{ Change grid snap rating}
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	either grid-size/text = "None" [
+		grid-snap-active: false
+		grid-snap: 1
+	][
+		grid-snap-active: true
+		grid-snap: to-integer (copy grid-size/text)
+	]
+	; grid-generater-code
+	refresh-panels
+	; clear the background grid
+	do [setup-paper 255.255.255 400 600]
+	; draw the updated grid and center crosshair in the background
+	do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
+]
 
+; ************************************************************************************************************
+
+;;; functions related to running remix code
 run-remix: function [
 	{ Execute the remix code in "code". 
 	  Put the output in the output area. }
@@ -79,30 +291,9 @@ run-remix: function [
 	do red-code
 ]
 
-;;; code for writing to a file
+; ************************************************************************************************************
 
-write-file: function [/extern memory-list] [
-	; save %Code.red memory-list/(length? memory-list)
-
-	either (length? memory-list) = 0 [
-		print "No Versions Saved"
-	] [
-		; save %Code.red memory-list/(length? memory-list)
-		; write/lines %Code.red memory-list/(length? memory-list)
-		; write/lines %testfile.txt ["a line" "another line"] EXAMPLE
-		print "TO BE COMPLETED"	
-	]
-]
-
-;;; code for version manipulation
-
-new-line: 1 ; the 'global' amount of lines in the commands text area
-detection-rate: 2 ; default autosaving rate
-save-mode: true ; boolean to consider if autosaving is desired
-global: 1
-
-memory-list: [] ; series of strings to store the commands at different verseions
-
+;;; functions related to the versioning tool
 ; saving a current version into the list
 save-text: function [text][
 	append memory-list (copy text)
@@ -124,7 +315,7 @@ version-selection: function [] [
 	]
 ]
 
-; function to display the latest TODO refine the function above with it to make this file less cluttered
+; function to display the latest version TODO refine the function above with it to make this file less cluttered
 latest-version: function [] [
 	either (length? memory-list) = 0 [
 		print "No Versions Made"
@@ -168,10 +359,12 @@ version-change: function [change] [
 count-enters: function[text /extern new-line /extern detection-rate /extern save-mode] [
 	length: (length? split text newline)
 	if save-mode = true [
+		; checks if more than 5 lines have be added
 		if (length >= (new-line + detection-rate)) [
 			new-line: length
 			return true
 		] 
+		; check if more than 5 lines have been removed
 		if (length <= (new-line - detection-rate))[
 			new-line: length
 			return true
@@ -193,8 +386,27 @@ change-detection-rate: function[/extern detection-rate /extern save-mode][
 	
 ]
 
-;;; functions to detect enter keystroke
+; returns true if the current command area is filled and unique with respect to existing versions
+unique-and-filled: function[text /extern memory-list][
+	if (text = "")[ ; check if empty
+		return false
+	]
+	text-copy: copy text
+	replace/all text-copy newline ""
+	foreach memory memory-list [ ; check uniqueness
+		memory-copy: copy memory
+		replace/all memory-copy newline "" 
+		if (memory-copy = text-copy) [ ; compare while ignoring new lines
+			return false
+		]
+	]
+	return true
+]
 
+; ************************************************************************************************************
+
+;;; functions related to the Coding and Sandbox Areas
+; detecting enter keystroke
 ; function which updates the line count, if for some reason it did not happen when a verseion changes
 update-line-count: function[
 	/extern command-lines [integer!] { the number of lines  used for version control}
@@ -205,22 +417,70 @@ update-line-count: function[
 	new-line: length
 ]
 
-command-lines: 1
 ; returns if last keystroke is enter
 enter-key-pressed: function[text /extern new-line /extern global][
 	
 	length: (length? split text newline)
 	
-	if (length <> global)[
+	if (length <> global)[ ; check if line count has changed
 		new-line: length ; update new length
 		return true
 	]
 	return false	
 ]
 
-;;; overriding the function in transpiler.red
+; check if tabbing indentation is right for valid code
+tab-correct: function [
+	{ make sure the tabbing for the code is correct}
+][
+	lines: copy ( split commands/text newline)
+	count: 0
+	foreach line lines [
+		new-count: length? ( split line tab  )
+		either ( greater? new-count ( count + 1 ) )[
+				return false
+		][
+			count: new-count
+		]
+	]
+	return true
+]
 
-add-check: false ; variable to only append once
+update-global-line: function [
+	{ updates the current number of lines}
+	/extern global
+] [
+	global: length? ( split commands/text newline)
+]
+
+use-autogenerated-code: func [
+	name [string!] {the name of the shape}
+] [
+	if (commands/text = commands-default-text) [
+		clear commands/text
+	]
+	live-commands/text 
+	formatted-name: copy (replace/all name " " "-") ; remove spacing
+	replace/all live-commands/text "auto-generated-shape" formatted-name ; replace template with name
+	commands/text: rejoin [commands/text "^/^/" live-commands/text]
+	clear live-commands/text
+	refresh-panels
+]
+
+; button handler for clearing the Sandbox Area
+clear-temp-code-area: func [] [
+	live-commands/text: copy ""
+	clear points-clicked-on
+	refresh-panels
+]
+
+; button handler for clearing the Coding Area
+clear-permanent-code-area: func [] [
+	commands/text: copy ""
+	refresh-panels
+]
+
+; function called to generate a function stub
 add-function: function[text /extern add-check][
 	either add-check [
 		add-check: false
@@ -276,186 +536,19 @@ add-function: function[text /extern add-check][
 		if (formatter-for-text = (rejoin [tab "showline " dbl-quote dbl-quote]))[
 			return
 		]
-		; append formatter-for-text tab
-		; append formatter-for-text "showline "
-		; append formatter-for-text dbl-quote
 
-		; append function declaration to command area
+		; add stub to code area
 		append commands/text formatter
 		append commands/text formatter-for-text
 	]
 ]
 
-;; returns true if the current command area is filled and unique to existing versions
-unique-and-filled: function[text /extern memory-list][
-	if (text = "")[ ; check if empty
-		return false
-	]
-	;;return here
-	text-copy: copy text
-	replace/all text-copy newline ""
-	foreach memory memory-list [ ; check uniqueness
-		memory-copy: copy memory
-		replace/all memory-copy newline "" 
-		if (memory-copy = text-copy) [ ; compare while ignoring new lines
-			return false
-		]
-	]
-	return true
-]
+; ************************************************************************************************************
 
-; redefine existing function to generate function
-create-red-function-call: function [
-	{ Return the red equivalent of a function call. }
-	remix-call "Includes the name and parameter list"
-][
-	the-fnc: select function-map remix-call/fnc-name
-	if the-fnc = none [
-		; check if the name can be pluralised.
-		either (the-fnc: pluralised remix-call/fnc-name) [
-			print ["Careful:" remix-call/fnc-name "renamed." ]
-		][
-			; print ["Error:" remix-call/fnc-name "not declared."]
-			; function: copy remix-call/fnc-name
-			if (enter-key-pressed commands/text) [ ; check if enter keystroke was pressed
-				add-function remix-call/fnc-name
-			]
-			return ; changed from quit for live coding
-		]
-	]
-	if all [ ; check if it is a recursive call
-		the-fnc/red-code = none
-		the-fnc/fnc-def = []
-	][ ; at the moment no reference parameters in recursive calls
-		red-stmt: to-word remix-call/fnc-name
-		red-params: create-red-parameters remix-call/actual-params
-		return compose [(red-stmt) (red-params)]
-	]
-	either the-fnc/red-code [ ; an ordinary function call
-		red-stmt: first the-fnc/red-code
-		either (red-stmt = 'get-item) or (red-stmt = 'set-item) [
-			red-params: deal-with-word-key remix-call/actual-params
-		][
-			red-params: create-red-parameters remix-call/actual-params
-		]
-		return compose [(red-stmt) (red-params)]
-	][ ; a reference function call
-		copy-fnc: copy/deep the-fnc/fnc-def
-		formals: the-fnc/formal-parameters
-		actual-parameters: copy []
-		bind-word: none
-		forall formals [
-			formal-param: first formals
-			actual-param: pick remix-call/actual-params (index? formals)
-			either (first formal-param) = #"#" [
-				if actual-param/type <> "variable" [
-					print "Error: The actual parameter for a reference parameter must be a variable."
-					quit
-				]
-				bind-word: to-word actual-param/name ; doesn't matter if more than one
-				replace/all/deep copy-fnc (to-word formal-param) bind-word
-				; there is a potential problem here
-				; an existing variable in the function code could have the same name
-				; as the actual parameter
-			][
-				append actual-parameters actual-param
-			]
-		]
-		red-params: create-red-parameters actual-parameters
-		compose/deep [do reduce [do bind [(copy-fnc)] quote (bind-word) (red-params)]]
-	]
-]
-
-draw-line: function [
-    { Overridden version - Draw a line from start to finish. }
-    start [hash! map!] "with x and y"
-    finish [hash! map!] "with x and y"
-][
-    start: point-to-pair start
-    finish: point-to-pair finish
-		; offsetting the start and finish points to make them relative to the centre
-		; of the graphical area
-    start/1: start/1 + 200
-    start/2: start/2 + 300
-    finish/1: finish/1 + 200
-    finish/2: finish/2 + 300
-    either draw-layer = 0 [
-        line-command: compose [line (start * 2) (finish * 2)]
-        draw background append copy background-pen line-command
-    ][
-        line-command: compose [line (start) (finish)]
-        append/only draw-command-layers/:draw-layer line-command
-    ]
-    none
-]
-
-draw-circle: function [
-    { Overridden version - Draw a circle. }
-    radius [number!]
-    centre [hash! map!] "x, y"
-][
-    centre: point-to-pair centre
-		; offsetting the centre to make them relative to the centre
-		; of the graphical area
-    centre/1: centre/1 + 200
-    centre/2: centre/2 + 300
-    either draw-layer = 0 [
-        circle-command: reduce ['circle centre * 2 radius * 2]
-        draw background append copy background-pen circle-command
-    ][
-        circle-command: reduce ['circle centre radius]
-        append/only draw-command-layers/:draw-layer circle-command
-    ]
-    none
-]
-
-
-; run (load into Red runtime) the standard remix library
-stdlib: read %standard-lib.rem
-run-remix/running-first-time stdlib
-
-; Setting up the graphics area by overriding the associated func
-setup-paper: func [
-    { Overridden version - Prepare the paper and drawing instructions.
-      At the moment I am using a 2x resolution background for the paper. }
-    colour [tuple!]
-    width [integer!]
-    height [integer!]
-][
-    paper-size: as-pair width height
-    background-template: reduce [paper-size * 2 colour]
-    background: make image! background-template
-		paper/color: colour
-		do [
-				all-layers/1: compose [image background 0x0 (paper-size)]
-				paper/draw: all-layers
-				paper/rate: none
-		]
-    none
-]
-
-; Allowing functions to be redefined temporarily so that re-execution of code
-; does not create trouble
-insert-function: function [
-    { Overridden version - Insert a function into the function map table }
-    func-object [object!]   {the function object}
-][
-    name: to-function-name func-object/template
-    put function-map name func-object
-]
-
-; loading the graphics statements which should be executed everytime
-precursor-statements: read %precusor-graphics-statements.rem
-
-; Block containing (it 'remembers') the points clicked on in graphics area
-; Each element inside is a representation of a coordinate
-; like: {0, 0}
-points-clicked-on: make block! 0
-
-
+;;; functions related to the drawing tool
 refresh-panels: func [
 		{ Clears the input text and graphics panels and then executes the remix 
-		code in the input panel }
+		code in the Coding and Sandbox Areas }
 ][
 
 		; first execute the necessary graphics related statements
@@ -475,55 +568,6 @@ refresh-panels: func [
 		]
 		; run the code
 		run-remix (rejoin [commands/text "^/" live-commands/text "^/"]) 
-]
-
-tab-correct: function [
-	{ make sure the tabbing for the code is correct}
-][
-	lines: copy ( split commands/text newline)
-	count: 0
-	foreach line lines [
-		new-count: length? ( split line tab  )
-		either ( greater? new-count ( count + 1 ) )[
-				return false
-		][
-			count: new-count
-		]
-	]
-	return true
-]
-
-
-update-global-line: function [
-	{ updates the current number of lines}
-	/extern global
-] [
-	global: length? ( split commands/text newline)
-]
-
-; corresponds to the radio buttons under "Select the shape drawing method"
-shape-drawing-method: "closed-shape"
-; corresponds to the radio buttons under "Select the shape drawing method"
-shape-interaction-method: "draw"
-
-change-grid-size: function [
-	{ Change grid snap rating}
-	/extern grid-snap [integer!]  {Snap change wanted}
-	/extern grid-snap-active [logic!]  {If we want the snap to happen}
-] [
-	either grid-size/text = "None" [
-		grid-snap-active: false
-		grid-snap: 1
-	][
-		grid-snap-active: true
-		grid-snap: to-integer (copy grid-size/text)
-	]
-	; grid-generater-code
-	refresh-panels
-	; clear the background grid
-	do [setup-paper 255.255.255 400 600]
-	; draw the updated grid and center crosshair in the background
-	do [run-remix/running-first-time rejoin [to-layer-zero centre-crosshair-remix-code grid-generater-code to-layer-one]]
 ]
 
 visualize-clicked-points: func [
@@ -661,31 +705,6 @@ visualize-clicked-points: func [
 	refresh-panels
 ]
 
-use-autogenerated-code: func [
-	name [string!] {the name of the shape}
-] [
-	if (commands/text = commands-default-text) [
-		clear commands/text
-	]
-	live-commands/text 
-	formatted-name: copy (replace/all name " " "-") ; remove spacing
-	replace/all live-commands/text "auto-generated-shape" formatted-name ; replace template with name
-	commands/text: rejoin [commands/text "^/^/" live-commands/text]
-	clear live-commands/text
-	refresh-panels
-]
-
-clear-temp-code-area: func [] [
-	live-commands/text: copy ""
-	clear points-clicked-on
-	refresh-panels
-]
-
-clear-permanent-code-area: func [] [
-	commands/text: copy ""
-	refresh-panels
-]
-
 update-polygons-in-code: func [] [
 		; extract names of all polygons present in the commands area
 		lines-of-command: split commands/text newline
@@ -702,11 +721,13 @@ update-polygons-in-code: func [] [
 		shapes-dropdown/data: polygon-names
 ]
 
-; for user's code area
-commands-default-text: copy "Type your code here.^/"
-; for auto code generation area 
-live-commands-default-text: copy "Interactive auto generated code will appear here.^/"
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
+; MAIN
+; run (load into Red runtime) the standard remix library
+run-remix/running-first-time stdlib
+
+; run the GUI and this is the constantly running program which provides 'liveness'
 view/tight [
 	title "Live"
 
