@@ -359,10 +359,12 @@ version-change: function [change] [
 count-enters: function[text /extern new-line /extern detection-rate /extern save-mode] [
 	length: (length? split text newline)
 	if save-mode = true [
+		; checks if more than 5 lines have be added
 		if (length >= (new-line + detection-rate)) [
 			new-line: length
 			return true
 		] 
+		; check if more than 5 lines have been removed
 		if (length <= (new-line - detection-rate))[
 			new-line: length
 			return true
@@ -389,7 +391,6 @@ unique-and-filled: function[text /extern memory-list][
 	if (text = "")[ ; check if empty
 		return false
 	]
-	;;return here
 	text-copy: copy text
 	replace/all text-copy newline ""
 	foreach memory memory-list [ ; check uniqueness
@@ -421,13 +422,14 @@ enter-key-pressed: function[text /extern new-line /extern global][
 	
 	length: (length? split text newline)
 	
-	if (length <> global)[
+	if (length <> global)[ ; check if line count has changed
 		new-line: length ; update new length
 		return true
 	]
 	return false	
 ]
 
+; check if tabbing indentation is right for valid code
 tab-correct: function [
 	{ make sure the tabbing for the code is correct}
 ][
