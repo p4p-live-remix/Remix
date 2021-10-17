@@ -1,6 +1,6 @@
 Red [needs: view]
 
-; unmodified code
+; UNMODIFIED CODE
 do %remix-grammar-AST.red
 do %transpiler.red
 
@@ -18,12 +18,21 @@ call-back: function [
 	true
 ]
 
-; constants
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; CONSTANTS
 grid-snap: 25
 grid-snap-active: true
 last-working: copy ""
+; remix code that generates a cross in the centre of the graphical area
+centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
+; remix code for changing between layers 0 and 1
+to-layer-zero: "^/draw on layer 0"
+to-layer-one: "^/draw on layer 1"
 
-; overridden functions
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; OVERRIDDEN FUNCTIONS
 prin: function [
 	{ Replace the standard "prin" function, which used in the built-in show functions. }
 	output [string!]
@@ -31,7 +40,9 @@ prin: function [
 	append output-area/text output
 ]
 
-; custom functions for live-remix
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; CUSTOM FUNCTIONS FOR LIVE-REMIX
 grid-generater-code: function [
 	/extern grid-snap [integer!]  {Snap change wanted}
 	/extern grid-snap-active [logic!]  {If we want the snap to happen}
@@ -42,13 +53,6 @@ grid-generater-code: function [
 	]
 	return ""	
 ]
-
-; remix code that generates a cross in the centre of the
-; graphical area
-centre-crosshair-remix-code: "^/draw line from ({-5, 5}) to {5, -5}^/draw line from ({-5, -5}) to {5, 5}"
-; remix code for changing between layers 0 and 1
-to-layer-zero: "^/draw on layer 0"
-to-layer-one: "^/draw on layer 1"
 
 run-remix: function [
 	{ Execute the remix code in "code". 
@@ -80,21 +84,6 @@ run-remix: function [
 		output-area/text: copy ""
 	]
 	do red-code
-]
-
-;;; code for writing to a file
-
-write-file: function [/extern memory-list] [
-	; save %Code.red memory-list/(length? memory-list)
-
-	either (length? memory-list) = 0 [
-		print "No Versions Saved"
-	] [
-		; save %Code.red memory-list/(length? memory-list)
-		; write/lines %Code.red memory-list/(length? memory-list)
-		; write/lines %testfile.txt ["a line" "another line"] EXAMPLE
-		print "TO BE COMPLETED"	
-	]
 ]
 
 ;;; code for version manipulation
