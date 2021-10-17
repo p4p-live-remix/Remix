@@ -42,6 +42,9 @@ grid-snap-active: true
 ; error state handling related constants
 last-working: copy ""
 
+; constants related to detecting enter keystroke
+command-lines: 1
+
 ; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
 ; OVERRIDDEN FUNCTIONS
@@ -52,172 +55,7 @@ prin: function [
 	append output-area/text output
 ]
 
-; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
-
-; CUSTOM FUNCTIONS FOR LIVE-REMIX
-;;; functions related to grid
-grid-generater-code: function [
-	{ generate the grid in drawing area }
-	/extern grid-snap [integer!]  {Snap change wanted}
-	/extern grid-snap-active [logic!]  {If we want the snap to happen}
-] [
-	if grid-snap-active [
-		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (500 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (700 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
-		return res
-	]
-	return ""	
-]
-
-;;; functions related to running remix code
-run-remix: function [
-	{ Execute the remix code in "code". 
-	  Put the output in the output area. }
-	code [string!]
-	/running-first-time
-	/extern successful-parse
-][
-	; N.B. remember to include the standard-lib
-	; source: append (append (copy "^/") (read %standard-lib.rem)) "^/"
-	source: copy "^/"
-	source: append (append source code) "^/"
-	; get the lexer output
-	first-pass: parse source split-words
-	clean-lex: tidy-up first-pass
-	lex-symbols: spit-out-symbols clean-lex
-	; parse
-	successful-parse: false
-	ast: parse/trace lex-symbols [collect program] :call-back
-	if not successful-parse [
-		return
-	]
-	; transpile
-	transpile-functions function-map
-	red-code: transpile-main ast
-	; run
-	; use output-area only after it has been defined
-	if not running-first-time [
-		output-area/text: copy ""
-	]
-	do red-code
-]
-
-;;; functions related to the versioning tool
-; saving a current version into the list
-save-text: function [text][
-	append memory-list (copy text)
-	update-line-count
-	exit
-]
-
-; function to display the selected version
-version-selection: function [] [
-	either version-select/selected = none [
-		print "Nothing selected"
-	] [
-		commands/text: copy (memory-list/(to-integer (version-select/selected))) ; allows non-integer values
-	
-		; update output of associated code
-		attempt [
-			refresh-panels 
-		]
-	]
-]
-
-; function to display the latest TODO refine the function above with it to make this file less cluttered
-latest-version: function [] [
-	either (length? memory-list) = 0 [
-		print "No Versions Made"
-	] [
-		commands/text: copy (memory-list/(to-integer (length? memory-list))) ; allows non-integer values
-		version-select/selected: (length? memory-list)
-		; update output of associated code
-		attempt [
-			refresh-panels 
-		]
-	]
-]
-
-; function to display the next/previous function TODO refine this function with the two above for less clutter
-version-change: function [change] [
-	either (length? memory-list) = 0 [
-		print "No Versions Made"
-	] [
-		; ensure a version is selected in the first place
-		either version-select/selected = none [
-			version-select/selected: 1
-		] [
-			either change = "+" [
-				if (to-integer (version-select/selected)) < (length? memory-list) [
-					version-select/selected: ((version-select/selected) + 1)
-				]
-			] [
-				if (to-integer (version-select/selected)) > 1 [
-					version-select/selected: ((version-select/selected) - 1)
-				]
-			]
-		]
-		commands/text: copy (memory-list/(to-integer (version-select/selected) ))
-		attempt [
-			refresh-panels 
-		]
-	]
-]
-
-; function to check if a new version should be saved, given the parameters provided
-count-enters: function[text /extern new-line /extern detection-rate /extern save-mode] [
-	length: (length? split text newline)
-	if save-mode = true [
-		if (length >= (new-line + detection-rate)) [
-			new-line: length
-			return true
-		] 
-		if (length <= (new-line - detection-rate))[
-			new-line: length
-			return true
-		]
-	]
-	return false
-]
-
-; function to modify the save rate
-change-detection-rate: function[/extern detection-rate /extern save-mode][
-	either save-rate/text = "Never" [
-		save-mode: false
-	] [
-		save-mode: true
-		attempt [
-			detection-rate: to-integer save-rate/text
-		]
-	]
-	
-]
-
-;;; functions related to detecting enter keystroke
-; function which updates the line count, if for some reason it did not happen when a verseion changes
-update-line-count: function[
-	/extern command-lines [integer!] { the number of lines  used for version control}
-	/extern new-line [integer!] { the global number of lines}
-	 ][
-	length: (length? split commands/text newline)
-	command-lines: length
-	new-line: length
-]
-
-command-lines: 1
-; returns if last keystroke is enter
-enter-key-pressed: function[text /extern new-line /extern global][
-	
-	length: (length? split text newline)
-	
-	if (length <> global)[
-		new-line: length ; update new length
-		return true
-	]
-	return false	
-]
-
-;;; overriding the function in transpiler.red
-
+; overriding a function from transpiler.red
 add-check: false ; variable to only append once
 add-function: function[text /extern add-check][
 	either add-check [
@@ -284,25 +122,7 @@ add-function: function[text /extern add-check][
 	]
 ]
 
-;; returns true if the current command area is filled and unique to existing versions
-unique-and-filled: function[text /extern memory-list][
-	if (text = "")[ ; check if empty
-		return false
-	]
-	;;return here
-	text-copy: copy text
-	replace/all text-copy newline ""
-	foreach memory memory-list [ ; check uniqueness
-		memory-copy: copy memory
-		replace/all memory-copy newline "" 
-		if (memory-copy = text-copy) [ ; compare while ignoring new lines
-			return false
-		]
-	]
-	return true
-]
-
-; redefine existing function to generate function
+; overriding function to generate function
 create-red-function-call: function [
 	{ Return the red equivalent of a function call. }
 	remix-call "Includes the name and parameter list"
@@ -406,6 +226,197 @@ draw-circle: function [
     ]
     none
 ]
+
+; ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+; CUSTOM FUNCTIONS FOR LIVE-REMIX
+;;; functions related to grid
+grid-generater-code: function [
+	{ generate the grid in drawing area }
+	/extern grid-snap [integer!]  {Snap change wanted}
+	/extern grid-snap-active [logic!]  {If we want the snap to happen}
+] [
+	if grid-snap-active [
+		res: rejoin ["^/circle : make shape of {^/^-{-0.5, 0.5},^/^-{0.5, 0.5},^/^-{0.5, -0.5},^/^-{-0.5, -0.5}^/} with size 5^/starting with [x: 0] repeat " (to-string (500 / grid-snap)) " times^/^-starting with [y : 0] repeat " (to-string (700 / grid-snap)) " times^/^-^-plot (circle) at center with (x) and (y)^/^-^-y : y + " (to-string grid-snap) "^/^-x : x + " (to-string grid-snap) "^/plot (shape) at center with (x) and (y):^/^-shape [position] : {x, y}^/^-draw (shape)"]
+		return res
+	]
+	return ""	
+]
+
+; ************************************************************************************************************
+
+;;; functions related to running remix code
+run-remix: function [
+	{ Execute the remix code in "code". 
+	  Put the output in the output area. }
+	code [string!]
+	/running-first-time
+	/extern successful-parse
+][
+	; N.B. remember to include the standard-lib
+	; source: append (append (copy "^/") (read %standard-lib.rem)) "^/"
+	source: copy "^/"
+	source: append (append source code) "^/"
+	; get the lexer output
+	first-pass: parse source split-words
+	clean-lex: tidy-up first-pass
+	lex-symbols: spit-out-symbols clean-lex
+	; parse
+	successful-parse: false
+	ast: parse/trace lex-symbols [collect program] :call-back
+	if not successful-parse [
+		return
+	]
+	; transpile
+	transpile-functions function-map
+	red-code: transpile-main ast
+	; run
+	; use output-area only after it has been defined
+	if not running-first-time [
+		output-area/text: copy ""
+	]
+	do red-code
+]
+
+; ************************************************************************************************************
+
+;;; functions related to the versioning tool
+; saving a current version into the list
+save-text: function [text][
+	append memory-list (copy text)
+	update-line-count
+	exit
+]
+
+; function to display the selected version
+version-selection: function [] [
+	either version-select/selected = none [
+		print "Nothing selected"
+	] [
+		commands/text: copy (memory-list/(to-integer (version-select/selected))) ; allows non-integer values
+	
+		; update output of associated code
+		attempt [
+			refresh-panels 
+		]
+	]
+]
+
+; function to display the latest TODO refine the function above with it to make this file less cluttered
+latest-version: function [] [
+	either (length? memory-list) = 0 [
+		print "No Versions Made"
+	] [
+		commands/text: copy (memory-list/(to-integer (length? memory-list))) ; allows non-integer values
+		version-select/selected: (length? memory-list)
+		; update output of associated code
+		attempt [
+			refresh-panels 
+		]
+	]
+]
+
+; function to display the next/previous function TODO refine this function with the two above for less clutter
+version-change: function [change] [
+	either (length? memory-list) = 0 [
+		print "No Versions Made"
+	] [
+		; ensure a version is selected in the first place
+		either version-select/selected = none [
+			version-select/selected: 1
+		] [
+			either change = "+" [
+				if (to-integer (version-select/selected)) < (length? memory-list) [
+					version-select/selected: ((version-select/selected) + 1)
+				]
+			] [
+				if (to-integer (version-select/selected)) > 1 [
+					version-select/selected: ((version-select/selected) - 1)
+				]
+			]
+		]
+		commands/text: copy (memory-list/(to-integer (version-select/selected) ))
+		attempt [
+			refresh-panels 
+		]
+	]
+]
+
+; function to check if a new version should be saved, given the parameters provided
+count-enters: function[text /extern new-line /extern detection-rate /extern save-mode] [
+	length: (length? split text newline)
+	if save-mode = true [
+		if (length >= (new-line + detection-rate)) [
+			new-line: length
+			return true
+		] 
+		if (length <= (new-line - detection-rate))[
+			new-line: length
+			return true
+		]
+	]
+	return false
+]
+
+; function to modify the save rate
+change-detection-rate: function[/extern detection-rate /extern save-mode][
+	either save-rate/text = "Never" [
+		save-mode: false
+	] [
+		save-mode: true
+		attempt [
+			detection-rate: to-integer save-rate/text
+		]
+	]
+	
+]
+
+; returns true if the current command area is filled and unique with respect to existing versions
+unique-and-filled: function[text /extern memory-list][
+	if (text = "")[ ; check if empty
+		return false
+	]
+	;;return here
+	text-copy: copy text
+	replace/all text-copy newline ""
+	foreach memory memory-list [ ; check uniqueness
+		memory-copy: copy memory
+		replace/all memory-copy newline "" 
+		if (memory-copy = text-copy) [ ; compare while ignoring new lines
+			return false
+		]
+	]
+	return true
+]
+
+; ************************************************************************************************************
+
+;;; functions related to detecting enter keystroke
+; function which updates the line count, if for some reason it did not happen when a verseion changes
+update-line-count: function[
+	/extern command-lines [integer!] { the number of lines  used for version control}
+	/extern new-line [integer!] { the global number of lines}
+	 ][
+	length: (length? split commands/text newline)
+	command-lines: length
+	new-line: length
+]
+
+; returns if last keystroke is enter
+enter-key-pressed: function[text /extern new-line /extern global][
+	
+	length: (length? split text newline)
+	
+	if (length <> global)[
+		new-line: length ; update new length
+		return true
+	]
+	return false	
+]
+
+
+
+
 
 
 ; run (load into Red runtime) the standard remix library
